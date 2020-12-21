@@ -4,6 +4,7 @@ import { toggleControl } from "@mapstore/actions/controls";
 
 import {Glyphicon} from 'react-bootstrap';
 import Message from "@mapstore/components/I18N/Message";
+import '../../assets/style.css';
 
 const CONTROL_NAME = "urbanisme";
 
@@ -17,14 +18,9 @@ const Cadastrapp = compose(
     }), {
         onClose: toggleControl.bind(null, CONTROL_NAME, null)
     })
-)(({enabled}) => <div style={{
-    display: enabled ? "block" : "none",
-    zIndex: 1000,
-    position: "absolute",
-    top: 55,
-    right: 10,
-    background: "red"
-}}>Urbanisme</div>);
+)(({ enabled }) => <div style={{
+    display: enabled ? "block" : "none"
+}} id="urbanisme-button-bar">Urbanisme</div>);
 
 export default {
     name: "Urbanisme",
