@@ -1,0 +1,10 @@
+{
+  "plugins": [
+    {
+      "name": "Urbanisme",
+      "dependencies": [
+        "BurgerMenu"
+      ]
+    }
+  ]
+}
