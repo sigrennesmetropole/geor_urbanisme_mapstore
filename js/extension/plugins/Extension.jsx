@@ -19,10 +19,9 @@ import ToolsContainer from '@mapstore/plugins/containers/ToolsContainer';
 import urbanismeEpic from '../epics/urbanisme';
 import urbanismeReducer from '../reducers/urbanisme';
 import { setUp } from '../actions/urbanisme';
+import { CONTROL_NAME } from '../constants';
 
 import '../../assets/style.css';
-
-const CONTROL_NAME = "urbanisme";
 class Container extends React.Component {
     render() {
         const { children, ...props } = this.props;
@@ -50,26 +49,16 @@ class UrbanismeToolbar extends React.Component {
     getTools = () => {
         const tools = [
             {
-                alwaysVisible: true,
-                name: "NRU",
-                cfg: {},
-                items: [],
+                name: "urbanisme_remove",
                 position: 3,
                 priority: 1,
                 tool: false,
                 action: toggleControl.bind(null, CONTROL_NAME, null),
-                icon: <Glyphicon glyph="remove" />,
-                help: <Message msgId="helptexts.zoomToMaxExtentButton"/>
+                icon: <Glyphicon glyph="remove" />
             }
         ];
         const combinedItemTools = [...this.props.items, ...tools ];
-        const hidableItems = combinedItemTools.filter((item) => !item.alwaysVisible) || [];
-        const unsorted = combinedItemTools
-            .filter((item) =>
-                item.alwaysVisible
-                || hidableItems.length === 1) // TODO: Refactor and remove unnecessary filter
-            .filter(item => item.showWhen ? item.showWhen(this.props) : true)
-            .map((item, index) => assign({}, item, {position: item.position || index}));
+        const unsorted = combinedItemTools.map((item, index) => assign({}, item, {position: item.position || index}));
         return unsorted.sort((a, b) => a.position - b.position);
     };
 
@@ -99,7 +88,6 @@ class UrbanismeToolbar extends React.Component {
             tools={this.getTools()}
             panels={[]} />) : null;
     }
-
 }
 
 const Urbanisme = connect((state) => ({
@@ -113,8 +101,8 @@ const UrbanismePluginDefinition = {
     component: Urbanisme,
     containers: {
         BurgerMenu: {
-            name: "urbanisme",
-            text: "LAND PLANNING", // TODO: Use translation component
+            name: CONTROL_NAME,
+            text: <Message msgId="urbanisme.title"/>,
             icon: <Glyphicon glyph="th-list" />,
             action: toggleControl.bind(null, 'urbanisme', null),
             position: 1501,
