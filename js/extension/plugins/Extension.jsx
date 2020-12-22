@@ -1,41 +1,118 @@
-import React from "react";
-import { connect } from "react-redux";
-import { toggleControl } from "@mapstore/actions/controls";
+/*
+* Copyright 2020, GeoSolutions Sas.
+* All rights reserved.
+*
+* This source code is licensed under the BSD-style license found in the
+* LICENSE file in the root directory of this source tree.
+*/
 
+import React from "react";
+import assign from 'object-assign';
+import PropTypes from 'prop-types';
 import {Glyphicon} from 'react-bootstrap';
+import { connect } from "react-redux";
+
+import { toggleControl } from "@mapstore/actions/controls";
 import Message from "@mapstore/components/I18N/Message";
+import ToolsContainer from '@mapstore/plugins/containers/ToolsContainer';
+
+import urbanismeEpic from '../epics/urbanisme';
+
 import '../../assets/style.css';
 
 const CONTROL_NAME = "urbanisme";
+class Container extends React.Component {
+    render() {
+        const { children, ...props } = this.props;
+        return (<div {...props}>
+            {children}
+        </div>);
+    }
+}
+class UrbanismeToolbar extends React.Component {
+    static propTypes = {
+        enabled: PropTypes.boolean,
+        items: PropTypes.array
+    }
+    static defaultProps = {
+        enabled: false,
+        items: []
+    }
 
+    getTools = () => {
+        const tools = [
+            {
+                alwaysVisible: true,
+                name: "NRU",
+                cfg: {},
+                items: [],
+                position: 3,
+                priority: 1,
+                tool: false,
+                action: toggleControl.bind(null, CONTROL_NAME, null),
+                icon: <Glyphicon glyph="remove" />,
+                help: <Message msgId="helptexts.zoomToMaxExtentButton"/>
+            }
+        ];
+        const combinedItemTools = [...this.props.items, ...tools ];
+        const hidableItems = combinedItemTools.filter((item) => !item.alwaysVisible) || [];
+        const unsorted = combinedItemTools
+            .filter((item) =>
+                item.alwaysVisible
+                || hidableItems.length === 1) // TODO: Refactor and remove unnecessary filter
+            .filter(item => item.showWhen ? item.showWhen(this.props) : true)
+            .map((item, index) => assign({}, item, {position: item.position || index}));
+        return unsorted.sort((a, b) => a.position - b.position);
+    };
 
-const compose = (...functions) => args => functions.reduceRight((arg, fn) => fn(arg), args);
+    render() {
+        const panelStyle = {
+            minWidth: "300px",
+            right: "450px",
+            zIndex: 100,
+            position: "absolute",
+            overflow: "auto",
+            left: "52px",
+            top: "52px"
+        };
 
-const Cadastrapp = compose(
-    connect((state) => ({
-        enabled: state.controls && state.controls[CONTROL_NAME] && state.controls[CONTROL_NAME].enabled || false,
-        withButton: false
-    }), {
-        onClose: toggleControl.bind(null, CONTROL_NAME, null)
-    })
-)(({ enabled }) => <div style={{
-    display: enabled ? "block" : "none"
-}} id="urbanisme-button-bar">Urbanisme</div>);
+        const btnConfig = {
+            className: "square-button"
+        };
 
-export default {
+        return this.props.enabled ? (<ToolsContainer
+            id={CONTROL_NAME}
+            className="urbanismeToolbar btn-group-horizontal"
+            container={Container}
+            toolStyle="primary"
+            activeStyle="success"
+            panelStyle={panelStyle}
+            toolCfg={btnConfig}
+            tools={this.getTools()}
+            panels={[]} />) : null;
+    }
+
+}
+
+const Urbanisme = connect((state) => ({
+    enabled: state.controls && state.controls.urbanisme && state.controls.urbanisme.enabled || false
+}))(UrbanismeToolbar);
+
+const UrbanismePluginDefinition = {
     name: "Urbanisme",
-    component: Cadastrapp,
-    reducers: {},
-    epics: {},
+    component: Urbanisme,
     containers: {
         BurgerMenu: {
             name: "urbanisme",
-            position: 1050,
-            text: <Message msgId="urbanisme.title"/>,
-            icon: <Glyphicon glyph="th" />,
+            text: "LAND PLANNING", // TODO: Use translation component
+            icon: <Glyphicon glyph="th-list" />,
+            action: toggleControl.bind(null, 'urbanisme', null),
+            position: 1501,
             doNotHide: true,
-            action: toggleControl.bind(null, CONTROL_NAME, null),
-            priority: 1
+            priority: 2
         }
-    }
+    },
+    epics: urbanismeEpic()
 };
+
+export default UrbanismePluginDefinition;
