@@ -11,34 +11,56 @@ import * as Rx from 'rxjs';
 import { TOGGLE_CONTROL } from '@mapstore/actions/controls';
 import { updateAdditionalLayer, removeAdditionalLayer } from '@mapstore/actions/additionallayers';
 
+import { SET_UP, setConfiguration } from '../actions/urbanisme';
+import { configSelector, getUrbanismeLayer } from '../selectors/urbanisme';
+import { getConfiguration } from '../api';
+import { URBANISME_RASTER_LAYER_ID, URBANISME_OWNER, URBANISME_LAYER_NAME } from '../constants';
 
-export const URBANISME_RASTER_LAYER_ID = "__URBANISME_VECTOR_LAYER__";
-export const URBANISME_OWNER = "URBANISME";
-export const CONTROL_NAME = 'urbanisme';
+export const setUpPluginEpic = (action$, store) =>
+    action$.ofType(SET_UP)
+        .switchMap(() => {
+            const state = store.getState();
+            const isConfigLoaded = !!configSelector(state);
 
-export default () => ({
-    toggleLandPlanningEpic: (action$, store) =>
-        action$.ofType(TOGGLE_CONTROL)
-            .filter(({ control }) => control === "urbanisme")
-            .switchMap(() => {
-                const state = store.getState();
-                const enabled = state.controls && state.controls.urbanisme && state.controls.urbanisme.enabled || false;
-                if (enabled) {
-                    return Rx.Observable.of(updateAdditionalLayer(
-                        URBANISME_RASTER_LAYER_ID,
-                        URBANISME_OWNER,
-                        'overlay',
-                        {
-                            id: URBANISME_RASTER_LAYER_ID,
-                            type: "wms",
-                            name: "urbanisme_parcelle",
-                            url: "https://georchestra.geo-solutions.it:443/geoserver/qgis/ows?SERVICE=WMS&REQUEST=GetCapabilities",
-                            visibility: true,
-                            search: {}
-                        },
-                        true
-                    ));
-                }
-                return Rx.Observable.of(removeAdditionalLayer({ id: URBANISME_RASTER_LAYER_ID, owner: URBANISME_OWNER }),);
-            })
-});
+            return isConfigLoaded
+                ? Rx.Observable.empty()
+                : Rx.Observable.defer(() => getConfiguration())
+                    .switchMap(data => {
+                        return Rx.Observable.of(setConfiguration(data));
+                    });
+        });
+
+export const toggleLandPlanningEpic =  (action$, store) =>
+    action$.ofType(TOGGLE_CONTROL)
+        .filter(({ control }) => control === "urbanisme")
+        .switchMap(() => {
+            const state = store.getState();
+            const { cadastreWMSURL } = configSelector(state);
+            const enabled = state.controls && state.controls.urbanisme && state.controls.urbanisme.enabled || false;
+            if (enabled) {
+                return Rx.Observable.of(updateAdditionalLayer(
+                    URBANISME_RASTER_LAYER_ID,
+                    URBANISME_OWNER,
+                    'overlay',
+                    {
+                        id: URBANISME_RASTER_LAYER_ID,
+                        type: "wms",
+                        name: URBANISME_LAYER_NAME,
+                        url: cadastreWMSURL,
+                        visibility: true,
+                        search: {}
+                    },
+                    true
+                ));
+            }
+
+            const layer = getUrbanismeLayer(state);
+            return layer
+                ? Rx.Observable.of(removeAdditionalLayer({ id: URBANISME_RASTER_LAYER_ID, owner: URBANISME_OWNER }))
+                : Rx.Observable.empty();
+        });
+
+export default {
+    toggleLandPlanningEpic,
+    setUpPluginEpic
+};
