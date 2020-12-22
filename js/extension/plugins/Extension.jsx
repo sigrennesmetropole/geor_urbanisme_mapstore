@@ -16,6 +16,7 @@ import { toggleControl } from "@mapstore/actions/controls";
 import Message from "@mapstore/components/I18N/Message";
 import ToolsContainer from '@mapstore/plugins/containers/ToolsContainer';
 
+import Nru from './urbanisme/Nru';
 import urbanismeEpic from '../epics/urbanisme';
 import urbanismeReducer from '../reducers/urbanisme';
 import { setUp } from '../actions/urbanisme';
@@ -49,10 +50,19 @@ class UrbanismeToolbar extends React.Component {
     getTools = () => {
         const tools = [
             {
+                name: "urbanisme_nru",
+                position: 1,
+                priority: 1,
+                tool: true,
+                plugin: Nru,
+                icon: <Glyphicon glyph="zoom-to" />
+            },
+            {
                 name: "urbanisme_remove",
                 position: 3,
                 priority: 1,
                 tool: false,
+                active: true,
                 action: toggleControl.bind(null, CONTROL_NAME, null),
                 icon: <Glyphicon glyph="remove" />
             }
