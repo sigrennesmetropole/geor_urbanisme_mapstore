@@ -13,15 +13,22 @@ import { Glyphicon, Tooltip } from 'react-bootstrap';
 import Button from '@mapstore/components/misc/Button';
 import OverlayTrigger from '@mapstore/components/misc/OverlayTrigger';
 
+import { nruActiveStateSelector } from '../../selectors/urbanisme';
+import { toggleNru } from '../../actions/urbanisme';
+
 const NruButton = (props) => {
-    const { tooltip, tooltipPlacement = "left" } = props;
+    const {
+        tooltip,
+        tooltipPlacement = "left",
+        onToggleNru = () => {},
+        nruActive } = props;
     const id = "nru";
     const btnConfig = {
         className: "square-button"
     };
-    const bsStyle = "primary";
+    const bsStyle = nruActive ? "success" : "primary";
     const btn = (
-        <Button id={id + "_btn"} disabled={false} {...btnConfig} onClick={() => {}} bsStyle={bsStyle} style={{}}>
+        <Button id={id + "_btn"} disabled={false} {...btnConfig} onClick={onToggleNru} bsStyle={bsStyle} style={{}}>
             <Glyphicon glyph="zoom-to" />
         </Button>
     );
@@ -36,8 +43,11 @@ const NruButton = (props) => {
     );
 };
 
-const Nru = connect(() => ({
+const Nru = connect((state) => ({
+    nruActive: nruActiveStateSelector(state),
     tooltip: "NRU"
-}))(NruButton);
+}), {
+    onToggleNru: toggleNru
+})(NruButton);
 
 export default Nru;

@@ -6,5 +6,10 @@
  * LICENSE file in the root directory of this source tree.
 */
 
-export * from './setUp';
-export * from './nru';
+export const TOGGLE_NRU = "URBANISME:TOGGLE_NRU";
+
+export const toggleNru = () => {
+    return {
+        type: TOGGLE_NRU
+    };
+};

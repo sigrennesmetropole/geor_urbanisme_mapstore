@@ -7,12 +7,18 @@
 */
 import { set } from '@mapstore/utils/ImmutableUtils';
 
-import { SET_CONFIG } from '../actions/urbanisme';
+import { SET_CONFIG, TOGGLE_NRU } from '../actions/urbanisme';
 
-export default function urbanisme(state = {}, action) {
+const initialState = {
+    nruActive: false
+};
+
+export default function urbanisme(state = initialState, action) {
     switch (action.type) {
     case SET_CONFIG:
         return set('config', action.config, state);
+    case TOGGLE_NRU:
+        return set('nruActive', !state.nruActive, state);
     default:
         return state;
     }

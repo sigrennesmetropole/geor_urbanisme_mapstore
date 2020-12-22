@@ -11,6 +11,8 @@ import { URBANISME_RASTER_LAYER_ID } from '../constants';
 
 export const configSelector = (state) => state?.urbanisme.config;
 
+export const nruActiveStateSelector = state => state?.urbanisme.nruActive || false;
+
 export const getUrbanismeLayer = (state) => {
     const additionalLayers = additionalLayersSelector(state) ?? [];
     return additionalLayers.filter(({ id }) => id === URBANISME_RASTER_LAYER_ID)?.[0]?.options;
