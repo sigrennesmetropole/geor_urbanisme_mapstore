@@ -8,6 +8,7 @@
 
 export const SET_UP = "URBANISME:SET_UP";
 export const SET_CONFIG = "URBANISME:SET_CONFIG";
+export const LOADING = "URBANISME:LOADING";
 
 export const setUp = () => {
     return {
@@ -21,3 +22,9 @@ export const setConfiguration = (config) => {
         config
     };
 };
+
+export const loading = (value, name) => ({
+    type: LOADING,
+    value,
+    name
+});

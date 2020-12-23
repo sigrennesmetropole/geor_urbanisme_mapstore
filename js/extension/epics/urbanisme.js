@@ -9,9 +9,11 @@
 import * as Rx from 'rxjs';
 
 import { TOGGLE_CONTROL } from '@mapstore/actions/controls';
+import { error } from '@mapstore/actions/notifications';
 import { updateAdditionalLayer, removeAdditionalLayer } from '@mapstore/actions/additionallayers';
+import { wrapStartStop } from '@mapstore/observables/epics';
 
-import { SET_UP, setConfiguration } from '../actions/urbanisme';
+import { SET_UP, setConfiguration, loading } from '../actions/urbanisme';
 import { configSelector, getUrbanismeLayer } from '../selectors/urbanisme';
 import { getConfiguration } from '../api';
 import { URBANISME_RASTER_LAYER_ID, URBANISME_OWNER, URBANISME_LAYER_NAME } from '../constants';
@@ -27,7 +29,16 @@ export const setUpPluginEpic = (action$, store) =>
                 : Rx.Observable.defer(() => getConfiguration())
                     .switchMap(data => {
                         return Rx.Observable.of(setConfiguration(data));
-                    });
+                    }).let(
+                        wrapStartStop(
+                            loading(true, 'config'),
+                            loading(false, 'config'),
+                            e => {
+                                console.log(e); // eslint-disable-line no-console
+                                return Rx.Observable.of(error({ title: "Error", message: "Unable to setup urbanisme config" }), loading(false, 'config'));
+                            }
+                        )
+                    );
         });
 
 export const toggleLandPlanningEpic =  (action$, store) =>

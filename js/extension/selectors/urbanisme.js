@@ -9,9 +9,11 @@ import { additionalLayersSelector } from '@mapstore/selectors/additionallayers';
 
 import { URBANISME_RASTER_LAYER_ID } from '../constants';
 
-export const configSelector = (state) => state?.urbanisme.config;
+export const configSelector = (state) => state?.urbanisme?.config;
 
 export const nruActiveStateSelector = state => state?.urbanisme.nruActive || false;
+
+export const configLoadingState = state => state?.urbanisme?.loadFlags?.config || false;
 
 export const getUrbanismeLayer = (state) => {
     const additionalLayers = additionalLayersSelector(state) ?? [];
