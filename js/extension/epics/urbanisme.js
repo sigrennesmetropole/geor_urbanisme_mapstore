@@ -18,6 +18,12 @@ import { configSelector, getUrbanismeLayer } from '../selectors/urbanisme';
 import { getConfiguration } from '../api';
 import { URBANISME_RASTER_LAYER_ID, URBANISME_OWNER, URBANISME_LAYER_NAME } from '../constants';
 
+/**
+ * Ensures that config for the urbanisme tool is fetched and loaded
+ * @memberof epics.urbanisme
+ * @param {external:Observable} action$ manages `SET_UP`
+ * @return {external:Observable}
+ */
 export const setUpPluginEpic = (action$, store) =>
     action$.ofType(SET_UP)
         .switchMap(() => {
@@ -41,6 +47,13 @@ export const setUpPluginEpic = (action$, store) =>
                     );
         });
 
+/**
+ * Ensures that when the urbanisme tool is enabled in controls, the urbanisme_parcelle layer is added to map
+ * as an overlay and when disabled the layer is removed from the map
+ * @memberof epics.urbanisme
+ * @param {external:Observable} action$ manages `TOGGLE_CONTROL`
+ * @return {external:Observable}
+ */
 export const toggleLandPlanningEpic =  (action$, store) =>
     action$.ofType(TOGGLE_CONTROL)
         .filter(({ control }) => control === "urbanisme")

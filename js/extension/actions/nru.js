@@ -8,6 +8,11 @@
 
 export const TOGGLE_NRU = "URBANISME:TOGGLE_NRU";
 
+/**
+* Toggles the state of the NRU tool
+* @memberof actions.nru
+* @return {object} with type `TOGGLE_NRU`
+*/
 export const toggleNru = () => {
     return {
         type: TOGGLE_NRU
