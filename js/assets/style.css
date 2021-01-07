@@ -1,7 +1,9 @@
-#urbanisme-button-bar {
-    z-index: 1000;
+.urbanismeToolbar {
     position: absolute;
-    top: 55px;
-    right: 10px;
-    background: red
-}
+    top: 60px;
+    right: 0;
+    z-index: 1000;
+    margin-bottom: 35px;
+    margin-right: 5px;
+  }
+    

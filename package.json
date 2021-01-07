@@ -1,7 +1,7 @@
 {
-    "name": "MapStoreExtension",
+    "name": "UrbanismeExtension",
     "version": "1.0.0",
-    "description": "Template project to create MapStore extensions",
+    "description": "Urbanisme MS's plugin for geOrchestra",
     "main": "index.js",
     "eslintConfig": {
         "extends": [
