@@ -1,0 +1,33 @@
+{
+    "locale": "es-ES",
+    "messages": {
+        "urbanisme": {
+            "title": "Planificación territorial",
+            "ads": {
+                "listOfAds": "Lista de anuncios",
+                "quartier": "Distrito",
+                "parcelle": "Elementos de información aplicables a la parcela catastral",
+                "secteur": "Sector educativo",
+                "emptyNom": "Ningún sector de instrucción corresponde a la ubicación de la parcela",
+                "emptyNumNom": "Ningún distrito corresponde a la ubicación de la parcela"
+            },
+            "nru": {
+                "title": "Normativa aplicable a la parcela catastral",
+                "territory": "Comuna",
+                "section": "Sección",
+                "plotNumber": "Número gráfico",
+                "address": "Dirección catastral",
+                "capacity": "Capacidad DGFiP (m²)",
+                "area": "Área calculada (m²)",
+                "account": "Cuenta de propietario",
+                "owner": "Propietario(s)",
+                "productionDate": "Fecha de producción de RU",
+                "year": "Año del catastro"
+            },
+            "landPlanning" : {
+                "print": "Impresión",
+                "cancel": "Cancelar"
+            }
+        }
+    }
+}

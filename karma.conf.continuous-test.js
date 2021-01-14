@@ -7,6 +7,7 @@ module.exports = function karmaConfig(config) {
             { pattern: './js/test-resources/**/*', included: false }
         ],
         path: [path.join(__dirname, "js"), path.join(__dirname, "MapStore2", "web", "client")],
+        browsers: ["Chrome"],
         testFile: 'tests.webpack.js',
         singleRun: false,
         alias: {

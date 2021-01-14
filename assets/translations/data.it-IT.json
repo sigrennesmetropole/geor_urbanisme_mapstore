@@ -2,7 +2,32 @@
     "locale": "it-IT",
     "messages": {
         "urbanisme": {
-            "title": "Pianificazione del territorio"
+            "title": "Pianificazione del territorio",
+            "ads": {
+                "listOfAds": "Elenco degli annunci",
+                "quartier": "Quartiere",
+                "parcelle": "Elementi informativi applicabili alla parcella catastale",
+                "secteur": "Settore dell'istruzione",
+                "emptyNom": "Nessun settore di istruzione corrisponde alla posizione della trama",
+                "emptyNumNom": "Nessun quartiere corrisponde all'ubicazione della trama"
+            },
+            "nru": {
+                "title": "Normativa applicabile al terreno catastale",
+                "territory": "Comune",
+                "section": "Sezione",
+                "plotNumber": "Numero di trama",
+                "address": "Indirizzo catastale",
+                "capacity": "Capacità DGFiP (m²)",
+                "area": "Area calcolata (m²)",
+                "account": "Account proprietario",
+                "owner": "Proprietario(s)",
+                "productionDate": "Data di produzione nel Regno Unito",
+                "year": "Anno del catasto"
+            },
+            "landPlanning" : {
+                "print": "Stampa",
+                "cancel": "Annulla"
+            }
         }
     }
 }

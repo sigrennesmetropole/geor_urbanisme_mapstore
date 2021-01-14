@@ -1,0 +1,33 @@
+{
+    "locale": "de-DE",
+    "messages": {
+        "urbanisme": {
+            "title": "Landplanung",
+            "ads": {
+                "listOfAds": "Liste der ADS",
+                "quartier": "Kreis",
+                "parcelle": "Informationselemente für das Katasterpaket",
+                "secteur": "Bildungssektor",
+                "emptyNom": "Kein Anweisungssektor entspricht dem Ort des Grundstücks",
+                "emptyNumNom": "Kein Bezirk entspricht dem Standort des Grundstücks"
+            },
+            "nru": {
+                "title": "Bestimmungen für das Katasterplot",
+                "territory": "Kommune",
+                "section": "Sektion",
+                "plotNumber": "Grundstücksnummer",
+                "address": "Katasteradresse",
+                "capacity": "DGFiP-Kapazität (m²)",
+                "area": "Berechnete Fläche (m²)",
+                "account": "Besitzerkonto",
+                "owner": "Besitzer",
+                "productionDate": "Herstellungsdatum von RU",
+                "year": "Jahr des Katasters"
+            },
+            "landPlanning" : {
+                "print": "Drucken",
+                "cancel": "Stornieren"
+            }
+        }
+    }
+}

@@ -2,7 +2,32 @@
     "locale": "en-US",
     "messages": {
         "urbanisme": {
-            "title": "Land Planning"
+            "title": "Land Planning",
+            "ads": {
+                "listOfAds": "List of ADS",
+                "quartier": "District",
+                "parcelle": "Information elements applicable to the cadastral parcel",
+                "secteur": "Education sector",
+                "emptyNom": "No instruction sector corresponds to the location of the plot",
+                "emptyNumNom": "No district corresponds to the location of the plot"
+            },
+            "nru": {
+                "title": "Regulations applicable to the cadastral plot",
+                "territory": "Commune",
+                "section": "Section",
+                "plotNumber": "Plot number",
+                "address": "Cadastral address",
+                "capacity": "DGFiP capacity (m²)",
+                "area": "Calculated area (m²)",
+                "account": "Owner account",
+                "owner": "Owner (s)",
+                "productionDate": "Date of production of RU",
+                "year": "Year of the cadastre"
+            },
+            "landPlanning" : {
+                "print": "Print",
+                "cancel": "Cancel"
+            }
         }
     }
 }
