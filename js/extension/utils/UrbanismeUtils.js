@@ -37,9 +37,8 @@ export const retryDownload = (response, fileName, retries = 60) => {
                 });
         }
         if (retries > 0) {
-            return setTimeout(()=> {
-                retryDownload(response, fileName, retries - 1);
-            }, 2000);
+            return new Promise(resolve => setTimeout(resolve, 2000))
+                .then(()=> retryDownload(response, fileName, retries - 1));
         }
         throw new Error(res);
     });

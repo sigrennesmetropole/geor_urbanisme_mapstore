@@ -26,7 +26,7 @@ import {
 } from "../actions/urbanisme";
 import { CONTROL_NAME } from "../constants";
 import "../../assets/style.css";
-import {configLoadedSelector, configSelector} from "@js/extension/selectors/urbanisme";
+import {configSelector} from "@js/extension/selectors/urbanisme";
 
 const Urbanisme = connect(
     state => ({

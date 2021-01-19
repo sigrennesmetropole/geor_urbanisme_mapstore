@@ -10,7 +10,8 @@ import React, { useEffect } from "react";
 import Toolbar from "@mapstore/components/misc/toolbar/Toolbar";
 import {
     CONTROL_NAME,
-    URBANISME_TOOLS
+    URBANISME_TOOLS,
+    HELP_LINK_DEFAULT
 } from "@js/extension/constants";
 import LandPlanning from "@js/extension/components/LandPlanningViewer";
 
@@ -31,7 +32,7 @@ const UrbanismeToolbar = ({
     onSetUp = () => {},
     onToggleTool = () => {},
     onToggleControl = () => {},
-    helpLink = '',
+    helpLink = HELP_LINK_DEFAULT,
     ...props
 }) => {
     const { activeTool = '', showGFIPanel = false } = urbanisme;

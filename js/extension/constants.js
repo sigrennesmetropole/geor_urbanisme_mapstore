@@ -20,3 +20,5 @@ export const ADS_DEFAULTS = {
     emptyNom: `Aucun secteur d\'instruction ne correspond à la localisation de la parcelle`,
     emptyNumNom: "Aucun quartier ne correspond à la localisation de la parcelle"
 };
+
+export const HELP_LINK_DEFAULT = 'http://docs.georchestra.org/addon_urbanisme/';
