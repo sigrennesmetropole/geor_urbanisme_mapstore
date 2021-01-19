@@ -4,6 +4,7 @@
         "urbanisme": {
             "title": "Land Planning",
             "ads": {
+                "tooltip": "Town planning information on the ADS form",
                 "listOfAds": "List of ADS",
                 "quartier": "District",
                 "parcelle": "Information elements applicable to the cadastral parcel",
@@ -12,6 +13,7 @@
                 "emptyNumNom": "No district corresponds to the location of the plot"
             },
             "nru": {
+                "tooltip": "Town planning information on the plot",
                 "title": "Regulations applicable to the cadastral plot",
                 "territory": "Commune",
                 "section": "Section",

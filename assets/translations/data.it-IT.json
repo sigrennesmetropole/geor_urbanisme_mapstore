@@ -4,6 +4,7 @@
         "urbanisme": {
             "title": "Pianificazione del territorio",
             "ads": {
+                "tooltip": "Informazioni urbanistiche sul modulo ADS",
                 "listOfAds": "Elenco degli annunci",
                 "quartier": "Quartiere",
                 "parcelle": "Elementi informativi applicabili alla parcella catastale",
@@ -12,6 +13,7 @@
                 "emptyNumNom": "Nessun quartiere corrisponde all'ubicazione della trama"
             },
             "nru": {
+                "tooltip": "Informazioni urbanistiche sulla trama",
                 "title": "Normativa applicabile al terreno catastale",
                 "territory": "Comune",
                 "section": "Sezione",

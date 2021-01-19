@@ -4,6 +4,7 @@
         "urbanisme": {
             "title": "Landplanung",
             "ads": {
+                "tooltip": "Stadtplanungsinformationen auf dem ADS-Formular",
                 "listOfAds": "Liste der ADS",
                 "quartier": "Kreis",
                 "parcelle": "Informationselemente für das Katasterpaket",
@@ -12,6 +13,7 @@
                 "emptyNumNom": "Kein Bezirk entspricht dem Standort des Grundstücks"
             },
             "nru": {
+                "tooltip": "Stadtplanungsinformationen auf dem Grundstück",
                 "title": "Bestimmungen für das Katasterplot",
                 "territory": "Kommune",
                 "section": "Sektion",

@@ -4,6 +4,7 @@
         "urbanisme": {
             "title": "Aménagement du territoire",
             "ads": {
+                "tooltip": "Renseignement d'urbanisme sur la fiche ADS",
                 "listOfAds": "Liste des ADS",
                 "quartier": "Quartier",
                 "parcelle": "Eléments d'informations applicables à la parcelle cadastrale",
@@ -12,6 +13,7 @@
                 "emptyNumNom": "Aucun quartier ne correspond à la localisation de la parcelle"
             },
             "nru": {
+                "tooltip": "Renseignement d'urbanisme sur la parcelle",
                 "title": "Réglementation applicable à la parcelle cadastrale",
                 "territory": "Commune",
                 "section": "Section",

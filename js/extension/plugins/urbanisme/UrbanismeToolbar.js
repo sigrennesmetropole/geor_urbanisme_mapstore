@@ -8,6 +8,7 @@
 import React, { useEffect } from "react";
 
 import Toolbar from "@mapstore/components/misc/toolbar/Toolbar";
+import Message from "@mapstore/components/I18N/Message";
 import {
     CONTROL_NAME,
     URBANISME_TOOLS,
@@ -57,19 +58,20 @@ const UrbanismeToolbar = ({
                 <Toolbar
                     btnDefaultProps={{
                         className: "square-button",
-                        bsStyle: "primary"
+                        bsStyle: "primary",
+                        tooltipPosition: "bottom"
                     }}
                     buttons={[
                         {
-                            glyph: "zoom-to",
-                            tooltip: NRU,
+                            glyph: "info-sign",
+                            tooltip: <Message msgId={'urbanisme.nru.tooltip'}/>,
                             bsStyle: activeTool === NRU ? "success" : "primary",
                             active: activeTool === NRU,
                             onClick: () => onToggleTool(NRU)
                         },
                         {
                             glyph: "info-sign",
-                            tooltip: ADS,
+                            tooltip: <Message msgId={'urbanisme.ads.tooltip'}/>,
                             bsStyle: activeTool === ADS ? "success" : "primary",
                             active: activeTool === ADS,
                             onClick: () => onToggleTool(ADS)
@@ -81,8 +83,7 @@ const UrbanismeToolbar = ({
                             onClick: () =>
                                 window.open(
                                     helpLink,
-                                    HELP,
-                                    "menubar=no,status=no,scrollbars=yes"
+                                    '_blank'
                                 )
                         },
                         {

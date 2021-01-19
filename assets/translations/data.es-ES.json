@@ -4,6 +4,7 @@
         "urbanisme": {
             "title": "Planificación territorial",
             "ads": {
+                "tooltip": "Información urbanística en el formulario ADS",
                 "listOfAds": "Lista de anuncios",
                 "quartier": "Distrito",
                 "parcelle": "Elementos de información aplicables a la parcela catastral",
@@ -12,6 +13,7 @@
                 "emptyNumNom": "Ningún distrito corresponde a la ubicación de la parcela"
             },
             "nru": {
+                "tooltip": "Información urbanística sobre la parcela",
                 "title": "Normativa aplicable a la parcela catastral",
                 "territory": "Comuna",
                 "section": "Sección",
