@@ -9,9 +9,11 @@
 import React from "react";
 import { Glyphicon } from "react-bootstrap";
 import { connect } from "react-redux";
+import { createSelector } from 'reselect';
 
 import { toggleControl } from "@mapstore/actions/controls";
 import Message from "@mapstore/components/I18N/Message";
+import {updateObjectFieldKey} from "@mapstore/utils/MapUtils";
 
 import UrbanismeToolbar from "./urbanisme/UrbanismeToolbar";
 import urbanismeEpic from "../epics/urbanisme";
@@ -24,6 +26,7 @@ import {
 } from "../actions/urbanisme";
 import { CONTROL_NAME } from "../constants";
 import "../../assets/style.css";
+import {configLoadedSelector, configSelector} from "@js/extension/selectors/urbanisme";
 
 const Urbanisme = connect(
     state => ({
@@ -38,6 +41,14 @@ const Urbanisme = connect(
         onPrint: printSubmit
     }
 )(UrbanismeToolbar);
+
+/**
+ * Update epics name to plugin specific
+ */
+const updateEpicsName = () => {
+    Object.keys(urbanismeEpic).forEach(t=> updateObjectFieldKey(urbanismeEpic, t, 'urbanimse_' + t));
+    return urbanismeEpic;
+};
 
 /**
  * Urbanisme tools Plugin. Allow to fetch NRU and ADS data on parcelle layer
@@ -69,12 +80,18 @@ const UrbanismePlugin = {
             text: <Message msgId="urbanisme.title" />,
             icon: <Glyphicon glyph="th-list" />,
             action: toggleControl.bind(null, CONTROL_NAME, null),
+            selector: createSelector(
+                configSelector,
+                (configLoaded) => ({
+                    style: !!configLoaded ? {} : { display: "none" } // Hide when config failed to load
+                })
+            ),
             position: 1501,
             doNotHide: true,
             priority: 2
         }
     },
-    epics: urbanismeEpic,
+    epics: updateEpicsName(),
     reducers: { urbanisme: urbanismeReducer }
 };
 

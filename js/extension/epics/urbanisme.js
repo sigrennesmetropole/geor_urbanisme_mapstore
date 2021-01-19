@@ -44,6 +44,7 @@ import {
 } from "../actions/urbanisme";
 import {
     configSelector,
+    configLoadSelector,
     urbanismeLayerSelector,
     urbanimseControlSelector,
     activeToolSelector,
@@ -77,11 +78,21 @@ import {
 export const setUpPluginEpic = (action$, store) =>
     action$.ofType(SET_UP).switchMap(() => {
         const state = store.getState();
-        const isConfigLoaded = !!configSelector(state);
+        const isConfigLoaded = configLoadSelector(state);
         return isConfigLoaded
             ? Rx.Observable.empty()
             : Rx.Observable.defer(() => getConfiguration()).switchMap(data =>
                 Rx.Observable.of(setConfiguration(data))
+            ).let(
+                wrapStartStop(
+                    loading(true, 'configLoading'),
+                    loading(false, 'configLoading'),
+                    e => {
+                        console.log(e); // eslint-disable-line no-console
+                        return Rx.Observable.of(error({ title: "Error", message: "Unable to setup urbanisme app" }), loading(false, 'configLoading'));
+
+                    }
+                )
             );
     });
 
@@ -98,7 +109,7 @@ export const toggleLandPlanningEpic = (action$, store) =>
         .filter(({ control }) => control === CONTROL_NAME)
         .switchMap(() => {
             const state = store.getState();
-            const { cadastreWMSURL } = configSelector(state);
+            const { cadastreWMSURL = '' } = configSelector(state) || {};
             const enabled = urbanimseControlSelector(state);
             const mapInfoEnabled = get(state, "mapInfo.enabled");
             const isMeasureEnabled = measureSelector(state);

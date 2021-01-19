@@ -42,9 +42,9 @@ describe('Urbanisme EPICS', () => {
     });
     it('setUpPluginEpic', (done) => {
         mockAxios.onGet().reply(200, {});
-        testEpic(addTimeoutEpic(setUpPluginEpic, 60), 1, setUp(), actions => {
-            expect(actions.length).toBe(1);
-            expect(actions[0].type).toBe(SET_CONFIG);
+        testEpic(addTimeoutEpic(setUpPluginEpic, 60), 2, setUp(), actions => {
+            expect(actions.length).toBe(2);
+            expect(actions[1].type).toBe(SET_CONFIG);
             done();
         }, {});
     });

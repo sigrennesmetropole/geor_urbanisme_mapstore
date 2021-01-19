@@ -9,6 +9,8 @@ import { getLayerFromId } from "@mapstore/selectors/layers";
 
 import { URBANISME_RASTER_LAYER_ID } from "../constants";
 
+export const configLoadSelector = state => state?.urbanisme?.configLoading;
+
 export const configSelector = state => state?.urbanisme?.config;
 
 export const activeToolSelector = state => state?.urbanisme?.activeTool;

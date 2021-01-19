@@ -23,10 +23,10 @@ import { URBANISME_RASTER_LAYER_ID } from "@js/extension/constants";
  * Sets the state of the viewer panel (open/close)
  * @param {object} response data of the print status call
  * @param {string} fileName of the pdf to be downloaded
- * @param {number} retries maximum retries for checking the print status
+ * @param {number} retries maximum retries for checking the print status. Retries every 2 sec for 2 minutes
  * @return {promise} pdf download operation
  */
-export const retryDownload = (response, fileName, retries = 10) => {
+export const retryDownload = (response, fileName, retries = 60) => {
     return axios.get(response.data.statusURL).then(res => {
         const done = (typeof res.data === "object" && res.data?.done) || false;
         if (done) {
@@ -37,7 +37,9 @@ export const retryDownload = (response, fileName, retries = 10) => {
                 });
         }
         if (retries > 0) {
-            return retryDownload(response, fileName, retries - 1);
+            return setTimeout(()=> {
+                retryDownload(response, fileName, retries - 1);
+            }, 2000);
         }
         throw new Error(res);
     });
