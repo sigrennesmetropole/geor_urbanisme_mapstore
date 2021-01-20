@@ -1,5 +1,5 @@
 /*
- * Copyright 2020, GeoSolutions Sas.
+ * Copyright 2021, GeoSolutions Sas.
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -8,11 +8,18 @@
 
 import expect from 'expect';
 
-import { configSelector, nruActiveStateSelector, configLoadingState, getUrbanismeLayer } from '../urbanisme';
-import { URBANISME_RASTER_LAYER_ID } from '../../constants';
+import { configSelector,
+    activeToolSelector,
+    printingSelector,
+    urbanimseControlSelector,
+    attributesSelector,
+    lpGFIPanelSelector,
+    urbanismeLayerSelector
+} from '../urbanisme';
+import { URBANISME_RASTER_LAYER_ID, URBANISME_TOOLS } from '../../constants';
 
-describe('Urbanisme SELECTORS', () => {
-    it('should test configSelector', () => {
+describe('Urbanisme selectors', () => {
+    it('test configSelector', () => {
         const state = {
             urbanisme: {
                 config: {prop: "A"}
@@ -20,39 +27,73 @@ describe('Urbanisme SELECTORS', () => {
         };
         expect(configSelector(state)).toEqual({prop: "A"});
     });
-    it('should test nruActiveStateSelector', () => {
+    it('test activeToolSelector', () => {
+        const state = {
+            urbanisme: {
+                activeTool: "NRU"
+            }
+        };
+        expect(activeToolSelector(state)).toEqual(URBANISME_TOOLS.NRU);
+    });
+    it('test printingSelector', () => {
         const state = {
             urbanisme: {
                 config: {prop: "A"},
-                nruActive: false
+                printing: true
             }
         };
-        expect(nruActiveStateSelector(state)).toEqual(false);
+        expect(printingSelector(state)).toEqual(true);
     });
-    it('should test configLoadingState', () => {
+    it('test urbanimseControlSelector', () => {
         const state = {
-            urbanisme: {
-                config: {prop: "A"},
-                nruActive: false,
-                loadFlags: { config: true }
-            }
-        };
-        expect(configLoadingState(state)).toEqual(true);
-    });
-    it('should test getUrbanismeLayer', () => {
-        const state = {
-            additionallayers: [{
-                id: URBANISME_RASTER_LAYER_ID,
-                options: {
-                    id: URBANISME_RASTER_LAYER_ID
+            controls: {
+                urbanisme: {
+                    enabled: true
                 }
-            }],
-            urbanisme: {
-                config: {prop: "A"},
-                nruActive: false,
-                loadFlags: { config: true }
             }
         };
-        expect(getUrbanismeLayer(state)).toEqual({ id: URBANISME_RASTER_LAYER_ID });
+        expect(urbanimseControlSelector(state)).toEqual(true);
+    });
+    it('test attributesSelector', () => {
+        const state = {
+            urbanisme: {
+                activeTool: "NRU",
+                attributes: {
+                    parcelle: "TEST"
+                }
+            }
+        };
+        expect(attributesSelector(state)).toEqual({parcelle: "TEST"});
+    });
+    it('test lpGFIPanelSelector', () => {
+        const state = {
+            urbanisme: {
+                activeTool: "NRU",
+                showGFIPanel: true,
+                attributes: {
+                    parcelle: "TEST"
+                }
+            }
+        };
+        expect(lpGFIPanelSelector(state)).toEqual(true);
+    });
+    it('test urbanismeLayerSelector', () => {
+        const state = {
+            layers: {
+                flat: [{
+                    id: URBANISME_RASTER_LAYER_ID,
+                    type: "wms",
+                    name: "urbanisme_parcelle",
+                    url: "/geoserver/wms",
+                    visibility: true
+                }]
+            },
+            urbanisme: {
+                config: {prop: "A"}
+            }
+        };
+        const layer = urbanismeLayerSelector(state);
+        expect(layer).toBeTruthy();
+        expect(layer.id).toEqual(URBANISME_RASTER_LAYER_ID);
     });
 });

@@ -24,4 +24,16 @@ const plugins = [
         }
     })
 ];
-module.exports = createExtensionWebpackConfig({ prod: true, name, ...commons, plugins});
+
+// Temporary TODO: Has to be updated in createExtensionWebpackConfig
+const fileLoader = {
+    test: /\.(ttf|eot|svg)(\?v=[0-9].[0-9].[0-9])?$/,
+    use: [{
+        loader: 'file-loader',
+        options: {
+            name: "[name].[ext]"
+        }
+    }]
+};
+const {module: moduleObj, ...extensionConfig} = createExtensionWebpackConfig({ prod: true, name, ...commons, plugins});
+module.exports = { ...extensionConfig, module: {...moduleObj, rules: [...moduleObj.rules, fileLoader]}};

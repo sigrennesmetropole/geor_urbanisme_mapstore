@@ -53,5 +53,12 @@ module.exports = {
         headers: {
             host: `georchestra.geo-solutions.it`
         }
+    },
+    "/urbanisme": {
+        target: `https://georchestra.geo-solutions.it`,
+        secure: false,
+        headers: {
+            host: `georchestra.geo-solutions.it`
+        }
     }
 };

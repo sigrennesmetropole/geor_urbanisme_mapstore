@@ -6,4 +6,33 @@
     margin-bottom: 35px;
     margin-right: 5px;
   }
-    
+
+.table-parcelle.table {
+    width: 400px;
+    border: 1px solid #dddddd;
+}
+
+.parcelle-table-label, .parcelle-table-value {
+    width: 200px;
+}
+
+.parcelle-table-label {
+    background-color: #696969;
+    color: lightgrey;
+    font-weight: bold;
+}
+.parcelle_ads h2, .parcelle_nru h2, .parcelle_ads h3, .parcelle_nru h3 {
+    margin-top: 0;
+    font-weight: bold;
+}
+
+.parcelle_nru .table-parcelle td {
+    padding: 4px;
+}
+
+#modal-land-panel-dialog {
+    position: fixed;
+    top: 0%;
+    left: 20%;
+    z-index: 1000 !important;
+}

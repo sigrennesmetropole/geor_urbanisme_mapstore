@@ -8,7 +8,8 @@
           "https://nominatim.openstreetmap.org",
           "http://cloudsdi.geo-solutions.it",
           "https://gs-stable.geo-solutions.it/geoserver",
-          "https://gs-stable.geo-solutions.it:443/geoserver"
+          "https://gs-stable.geo-solutions.it:443/geoserver",
+          "https://georchestra.geo-solutions.it/geoserver"
         ]
     },
     "geoStoreUrl": "rest/geostore/",
@@ -279,7 +280,13 @@
             },
             "FeedbackMask"
         ],
-        "desktop": ["Details", "Urbanisme",
+        "desktop": ["Details",
+          {
+            "name": "Urbanisme",
+            "cfg": {
+              "helpLink": "http://docs.georchestra.org/addon_urbanisme/"
+            }
+          },
           {
             "name": "Map",
             "cfg": {

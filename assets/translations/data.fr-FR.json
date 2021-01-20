@@ -2,7 +2,34 @@
     "locale": "fr-FR",
     "messages": {
         "urbanisme": {
-            "title": "Aménagement du territoire"
+            "title": "Aménagement du territoire",
+            "ads": {
+                "tooltip": "Renseignement d'urbanisme sur la fiche ADS",
+                "listOfAds": "Liste des ADS",
+                "quartier": "Quartier",
+                "parcelle": "Eléments d'informations applicables à la parcelle cadastrale",
+                "secteur": "Secteur d'instruction",
+                "emptyNom": "Aucun secteur d'instruction ne correspond à la localisation de la parcelle",
+                "emptyNumNom": "Aucun quartier ne correspond à la localisation de la parcelle"
+            },
+            "nru": {
+                "tooltip": "Renseignement d'urbanisme sur la parcelle",
+                "title": "Réglementation applicable à la parcelle cadastrale",
+                "territory": "Commune",
+                "section": "Section",
+                "plotNumber": "Numéro parcelle",
+                "address": "Adresse cadastrale",
+                "capacity": "Contenance DGFiP (m²)",
+                "area": "Surface calculée (m²)",
+                "account": "Compte propriétaire",
+                "owner": "Propriétaire(s)",
+                "productionDate": "Date de production des RU",
+                "year": "Millésime du cadastre"
+            },
+            "landPlanning" : {
+                "print": "Impression",
+                "cancel": "Annuler"
+            }
         }
     }
 }
