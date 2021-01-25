@@ -8,7 +8,9 @@
 
 export const URBANISME_RASTER_LAYER_ID = "__URBANISME_RASTER_LAYER__";
 export const CONTROL_NAME = "urbanisme";
-export const URBANISME_LAYER_NAME = "urbanisme_parcelle";
+export const DEFAULT_URBANISME_LAYER = "urbanisme_parcelle";
+export const DEFAULT_CADASTRAPP_URL = "/cadastrapp/services";
+export const DEFAULT_URBANISMEAPP_URL = "/urbanisme";
 export const URBANISME_TOOLS = {
     NRU: "NRU",
     ADS: "ADS",

@@ -284,7 +284,10 @@
           {
             "name": "Urbanisme",
             "cfg": {
-              "helpLink": "http://docs.georchestra.org/addon_urbanisme/"
+              "helpUrl": "http://docs.georchestra.org/addon_urbanisme/",
+              "cadastrappUrl": "/cadastrapp/services",
+              "urbanismeappUrl": "/urbanisme",
+              "layer": "urbanisme_parcelle"
             }
           },
           {

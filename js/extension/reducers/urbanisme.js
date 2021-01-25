@@ -12,7 +12,7 @@ import {
     LOADING,
     TOGGLE_VIEWER_PANEL,
     TOGGLE_TOOL,
-    SET_URBANISME_DATA
+    SET_URBANISME_DATA, SET_UP
 } from "../actions/urbanisme";
 
 const initialState = {
@@ -21,8 +21,10 @@ const initialState = {
 
 export default function urbanisme(state = initialState, action) {
     switch (action.type) {
+    case SET_UP:
+        return set('config', action.initConfig, state);
     case SET_CONFIG:
-        return set("config", action.config, state);
+        return { ...state, config: {...state.config, ...action.config }};
     case TOGGLE_TOOL:
         return set("activeTool", action.activeTool, state);
     case SET_URBANISME_DATA:

@@ -2,6 +2,16 @@
   "plugins": [
     {
       "name": "Urbanisme",
+      "title": "Urbanisme",
+      "description": "Tool to get information about land planning",
+      "glyph": "info-sign",
+      "docUrl": "https://github.com/sigrennesmetropole/geor_urbanisme_mapstore",
+      "defaultConfig": {
+        "helpUrl": "http://docs.georchestra.org/addon_urbanisme/",
+        "cadastrappUrl": "/cadastrapp/services",
+        "urbanismeappUrl": "/urbanisme",
+        "layer": "urbanisme_parcelle"
+      },
       "dependencies": [
         "BurgerMenu"
       ]

@@ -14,9 +14,10 @@ export const SET_CONFIG = "URBANISME:SET_CONFIG";
  * @memberof actions.setUp
  * @return {object} with type `SET_UP`
  */
-export const setUp = () => {
+export const setUp = (initConfig) => {
     return {
-        type: SET_UP
+        type: SET_UP,
+        initConfig
     };
 };
 

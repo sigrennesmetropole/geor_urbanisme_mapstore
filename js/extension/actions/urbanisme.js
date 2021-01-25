@@ -5,10 +5,10 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import axios from "@mapstore/libs/ajax";
 import { printError } from "@mapstore/actions/print";
 
 import { getUrbanismePrintSpec, retryDownload } from "../utils/UrbanismeUtils";
+import { printPDF } from "@js/extension/api";
 
 export * from "./setUp";
 export const TOGGLE_TOOL = "URBANISME:TOGGLE_TOOL";
@@ -101,8 +101,7 @@ export const printSubmit = attributes => {
             }
         };
         dispatch(loading(true, "printing"));
-        return axios
-            .post("/urbanisme/print/report.pdf", params)
+        return printPDF(params)
             .then(response => retryDownload(response, outputFilename))
             .then(() => dispatch(loading(false, "printing")))
             .catch(e => {

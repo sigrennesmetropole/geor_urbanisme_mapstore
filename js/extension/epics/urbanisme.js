@@ -65,8 +65,8 @@ import {
 import {
     CONTROL_NAME,
     URBANISME_RASTER_LAYER_ID,
-    URBANISME_LAYER_NAME,
-    URBANISME_TOOLS
+    URBANISME_TOOLS,
+    DEFAULT_URBANISME_LAYER
 } from "../constants";
 
 /**
@@ -81,8 +81,8 @@ export const setUpPluginEpic = (action$, store) =>
         const isConfigLoaded = configLoadSelector(state);
         return isConfigLoaded
             ? Rx.Observable.empty()
-            : Rx.Observable.defer(() => getConfiguration()).switchMap(data =>
-                Rx.Observable.of(setConfiguration(data))
+            : Rx.Observable.defer(() => getConfiguration()).switchMap(({cadastreWMSURL}) =>
+                Rx.Observable.of(setConfiguration({cadastreWMSURL}))
             ).let(
                 wrapStartStop(
                     loading(true, 'configLoading'),
@@ -109,7 +109,7 @@ export const toggleLandPlanningEpic = (action$, store) =>
         .filter(({ control }) => control === CONTROL_NAME)
         .switchMap(() => {
             const state = store.getState();
-            const { cadastreWMSURL = '' } = configSelector(state) || {};
+            const { cadastreWMSURL: url, layer: name = DEFAULT_URBANISME_LAYER } = configSelector(state) || {};
             const enabled = urbanimseControlSelector(state);
             const mapInfoEnabled = get(state, "mapInfo.enabled");
             const isMeasureEnabled = measureSelector(state);
@@ -118,8 +118,8 @@ export const toggleLandPlanningEpic = (action$, store) =>
                     addLayer({
                         id: URBANISME_RASTER_LAYER_ID,
                         type: "wms",
-                        name: URBANISME_LAYER_NAME,
-                        url: cadastreWMSURL,
+                        name,
+                        url,
                         visibility: true,
                         search: {}
                     }),
