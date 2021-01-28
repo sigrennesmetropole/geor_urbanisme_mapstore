@@ -8,7 +8,7 @@
                 "listOfAds": "List of ADS",
                 "quartier": "District",
                 "parcelle": "Information elements applicable to the cadastral parcel",
-                "secteur": "Education sector",
+                "secteur": "Education managing sector",
                 "emptyNom": "No instruction sector corresponds to the location of the plot",
                 "emptyNumNom": "No district corresponds to the location of the plot"
             },

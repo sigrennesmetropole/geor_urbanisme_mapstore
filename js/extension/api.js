@@ -8,20 +8,27 @@
 
 import axios from "@mapstore/libs/ajax";
 import { isEmpty } from "lodash";
+import {DEFAULT_CADASTRAPP_URL, DEFAULT_URBANISMEAPP_URL} from "@js/extension/constants";
 
-export const BASE_URL = "/cadastrapp/services";
+let cadastrappURL;
+let urbanismeURL;
+
+export const setAPIURL = (config) => {
+    cadastrappURL = config?.cadastrappUrl || DEFAULT_CADASTRAPP_URL;
+    urbanismeURL = config?.urbanismeappUrl || DEFAULT_URBANISMEAPP_URL;
+};
 
 /**
  * Retrieves the initial configuration for cadastrapp services
  * @returns {object} the configuration of the services containing base details of WMS/WFS services
  */
 export function getConfiguration() {
-    return axios.get(`${BASE_URL}/getConfiguration`).then(({ data }) => data);
+    return axios.get(`${cadastrappURL}/getConfiguration`).then(({ data }) => data);
 }
 
 export const getCommune = cgocommune => {
     return axios
-        .get(`${BASE_URL}/getCommune`, { params: { cgocommune } })
+        .get(`${cadastrappURL}/getCommune`, { params: { cgocommune } })
         .then(({ data }) => {
             const [{ libcom_min: commune }] = data;
             return { commune };
@@ -30,7 +37,7 @@ export const getCommune = cgocommune => {
 
 export const getParcelle = code => {
     return axios
-        .get(`${BASE_URL}/getParcelle`, { params: { parcelle: code } })
+        .get(`${cadastrappURL}/getParcelle`, { params: { parcelle: code } })
         .then(({ data }) => {
             if (!isEmpty(data)) {
                 const [
@@ -65,7 +72,7 @@ export const getParcelle = code => {
 
 export const getRenseignUrba = parcelle => {
     return axios
-        .get(`/urbanisme/renseignUrba`, { params: { parcelle } })
+        .get(`${urbanismeURL}/renseignUrba`, { params: { parcelle } })
         .then(({ data }) => {
             return { libelles: (data?.libelles || []).map(({ libelle }) => libelle) };
         });
@@ -73,13 +80,13 @@ export const getRenseignUrba = parcelle => {
 
 export const getFIC = (parcelle, onglet) => {
     return axios
-        .get(`${BASE_URL}/getFIC`, { params: { parcelle, onglet } })
+        .get(`${cadastrappURL}/getFIC`, { params: { parcelle, onglet } })
         .then(({ data }) => {
             if (isEmpty(data)) {
                 return null;
             }
             const [record] = data;
-            if (onglet === 0) {
+            if (onglet === 1) {
                 let appNomUsage = data.map(({ app_nom_usage }) => app_nom_usage);
                 let parcelleObj = {
                     nomProprio: appNomUsage.join(", ")
@@ -100,7 +107,7 @@ export const getFIC = (parcelle, onglet) => {
 
 export const getRenseignUrbaInfos = code => {
     return axios
-        .get("/urbanisme/renseignUrbaInfos", { params: { code_commune: code } })
+        .get(`${urbanismeURL}/renseignUrbaInfos`, { params: { code_commune: code } })
         .then(({ data }) => {
             if (isEmpty(data)) {
                 return null;
@@ -111,7 +118,7 @@ export const getRenseignUrbaInfos = code => {
 
 export const getAdsSecteurInstruction = parcelle => {
     return axios
-        .get("/urbanisme/adsSecteurInstruction", { params: { parcelle } })
+        .get(`${urbanismeURL}/adsSecteurInstruction`, { params: { parcelle } })
         .then(({ data }) => {
             if (isEmpty(data)) {
                 return null;
@@ -122,13 +129,13 @@ export const getAdsSecteurInstruction = parcelle => {
 
 export const getAdsAutorisation = parcelle => {
     return axios
-        .get("/urbanisme/adsAutorisation", { params: { parcelle } })
+        .get(`${urbanismeURL}/adsAutorisation`, { params: { parcelle } })
         .then(({ data }) => {
             if (isEmpty(data)) {
                 return null;
             }
             const { numdossier = [] } = data;
-            const ads = "Aucun ADSInfo trouvé pour la parcelle";
+            const ads = "Aucun ADS trouvé pour la parcelle";
             if (isEmpty(numdossier)) {
                 return { num_dossier: [ads] };
             }
@@ -140,11 +147,15 @@ export const getAdsAutorisation = parcelle => {
 
 export const getQuartier = parcelle => {
     return axios
-        .get("/urbanisme/quartier", { params: { parcelle } })
+        .get(`${urbanismeURL}/quartier`, { params: { parcelle } })
         .then(({ data }) => {
             if (isEmpty(data)) {
                 return null;
             }
             return { num_nom: data.numnom, id_parcelle: data.parcelle };
         });
+};
+
+export const printPDF = (params) => {
+    return axios.post(`${urbanismeURL}/print/report.pdf`, params);
 };

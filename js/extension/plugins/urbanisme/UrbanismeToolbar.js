@@ -15,6 +15,7 @@ import {
     HELP_LINK_DEFAULT
 } from "@js/extension/constants";
 import LandPlanning from "@js/extension/components/LandPlanningViewer";
+import {setAPIURL} from "@js/extension/api";
 
 /**
  * UrbanismeToolbar component
@@ -24,7 +25,7 @@ import LandPlanning from "@js/extension/components/LandPlanningViewer";
  * @param {func} props.onSetUp triggered when the component is initialized
  * @param {func} props.onToggleTool triggered on clicking the toolbar buttons
  * @param {func} props.onToggleControl triggered on clicking the close button of the toolbar
- * @param {string} props.helpLink configured help link from the localConfig
+ * @param {string} props.helpUrl configured help link from the localConfig
  *
  */
 const UrbanismeToolbar = ({
@@ -33,13 +34,15 @@ const UrbanismeToolbar = ({
     onSetUp = () => {},
     onToggleTool = () => {},
     onToggleControl = () => {},
-    helpLink = HELP_LINK_DEFAULT,
+    helpUrl = HELP_LINK_DEFAULT,
     ...props
 }) => {
     const { activeTool = '', showGFIPanel = false } = urbanisme;
     useEffect(() => {
-        onSetUp();
-    }, [onSetUp]);
+        const {cadastrappUrl, layer, urbanismeappUrl} = props;
+        setAPIURL({cadastrappUrl, urbanismeappUrl});
+        onSetUp({layer});
+    }, [setAPIURL, onSetUp]);
 
     const { NRU, ADS, HELP } = URBANISME_TOOLS;
     const panelStyle = {
@@ -82,7 +85,7 @@ const UrbanismeToolbar = ({
                             bsStyle: "primary",
                             onClick: () =>
                                 window.open(
-                                    helpLink,
+                                    helpUrl,
                                     '_blank'
                                 )
                         },

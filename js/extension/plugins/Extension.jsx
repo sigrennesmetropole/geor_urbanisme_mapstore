@@ -63,11 +63,17 @@ const updateEpicsName = () => {
  * @prop {function} [onToggleTool] function used to toggle tool to activate
  * @prop {function} [onToggleControl] function used to toggle state of the plugin toolbar
  * @prop {function} [onPrint] function used to print the attributes of NRU/ADS onto PDF
- * @prop {object} [cfg.helpLink] help link configured for the help tool
- * For example this will configure the following help link and upon clicking on the help button in the toolbar, the link will be displayed in new browser window
+ * @prop {string} [cfg.helpLink] help link configured for the help tool
+ * @prop {string} [cfg.cadastrappUrl] cadastrapp service path url
+ * @prop {string} [cfg.layer] name of the parcelle layer
+ * @prop {string} [cfg.urbanismeappUrl] urbanisme app service path url
+ * For example this will configure the help link and upon clicking on the help button in the toolbar, the link will be displayed in a new browser tab
  * ```
  * "cfg": {
- *  "helpLink": 'http://docs.georchestra.org/addon_urbanisme/'
+ *    "helpUrl": "http://docs.georchestra.org/addon_urbanisme/",
+ *    "cadastrappUrl": "/cadastrapp/services",
+ *    "urbanismeappUrl": "/urbanisme",
+ *    "layer": "urbanisme_parcelle"
  *  }
  * ```
  */

@@ -24,13 +24,15 @@ import {
     TOGGLE_VIEWER_PANEL,
     SET_URBANISME_DATA, toggleGFIPanel, toggleUrbanismeTool
 } from '../../actions/urbanisme';
-import { URBANISME_RASTER_LAYER_ID } from '../../constants';
+import {DEFAULT_CADASTRAPP_URL, DEFAULT_URBANISMEAPP_URL, URBANISME_RASTER_LAYER_ID} from '../../constants';
 import axios from 'axios';
 import MockAdapter from "axios-mock-adapter";
-import {BASE_URL} from "../../api";
-
+import {setAPIURL} from "@js/extension/api";
+const CADASTRAPP_URL = DEFAULT_CADASTRAPP_URL;
+const URBANISMEAPP_URL = DEFAULT_URBANISMEAPP_URL;
 describe('Urbanisme EPICS', () => {
     let mockAxios;
+    setAPIURL();
     beforeEach(done => {
         mockAxios = new MockAdapter(axios);
         setTimeout(done);
@@ -247,11 +249,14 @@ describe('Urbanisme EPICS', () => {
     });
 
     it('getFeatureInfoEpic load feature info', (done) => {
-        mockAxios.onGet(`${BASE_URL}/getCommune`).reply(200, [{libcom_min: "min"}]);
-        mockAxios.onGet(`${BASE_URL}/getParcelle`).reply(200, [{parcelle: "parcelle", ccopre: "ccopre",
+        mockAxios.onGet(`${CADASTRAPP_URL}/getCommune`).reply(200, [{libcom_min: "min"}]);
+        mockAxios.onGet(`${CADASTRAPP_URL}/getParcelle`).reply(200, [{parcelle: "parcelle", ccopre: "ccopre",
             ccosec: "ccosec", dnupla: "dnupla", dnvoiri: "dnvoiri", cconvo: "cconvo", dvoilib: "dvoilib", dcntpa: "dcntpa"}]);
-        mockAxios.onGet('/urbanisme/renseignUrba').reply(200, {libelles: [{libelle: "Test"}]});
-        mockAxios.onGet(`${BASE_URL}/getFIC`).reply(200, [{comptecommunal: "codeProprio"}]);
+        mockAxios.onGet(`${URBANISMEAPP_URL}/renseignUrba`).reply(200, {libelles: [{libelle: "Test"}]});
+        mockAxios.onGet(`${CADASTRAPP_URL}/getFIC`, ).reply((config)=>{
+            if (config.params.onglet === 0) return [200, [{surfc: "surfc"}]];
+            return [200, [{comptecommunal: "codeProprio"}]];
+        });
         mockAxios.onGet('/urbanisme/renseignUrbaInfos').reply(200, { date_pci: '2020/10/11', date_ru: '06/2020'});
 
         const urbanismeLayer = {id: URBANISME_RASTER_LAYER_ID, name: "URBANISME_PARCELLE"};
@@ -260,7 +265,7 @@ describe('Urbanisme EPICS', () => {
             urbanisme: { activeTool: "NRU"},
             layers: {flat: [urbanismeLayer]}
         };
-        const attributes = {"commune": "min", "parcelle": "parcelle", "numero": "dnupla", "contenanceDGFiP": "dcntpa", "codeSection": "ccopreccosec", "adresseCadastrale": "dnvoiri cconvo dvoilib", "libelles": ["Test"], "nomProprio": "", "codeProprio": "codeProprio", "adresseProprio": "  ", "surfaceSIG": "", "datePCI": "0/10/11", "dateRU": "06/2020"};
+        const attributes = {"commune": "min", "parcelle": "parcelle", "numero": "dnupla", "contenanceDGFiP": "dcntpa", "codeSection": "ccopreccosec", "adresseCadastrale": "dnvoiri cconvo dvoilib", "libelles": ["Test"], "nomProprio": "", "codeProprio": "codeProprio", "adresseProprio": "  ", "surfaceSIG": "surfc", "datePCI": "0/10/11", "dateRU": "06/2020"};
         testEpic(
             addTimeoutEpic(getFeatureInfoEpic, 60),
             3,
@@ -289,9 +294,9 @@ describe('Urbanisme EPICS', () => {
     });
 
     it('getFeatureInfoEpic load feature info', (done) => {
-        mockAxios.onGet('/urbanisme/adsSecteurInstruction').reply(200, {nom: "nom", ini_instru: "ini"});
-        mockAxios.onGet('/urbanisme/adsAutorisation').reply(200, {numdossier: [{numdossier: "test"}]});
-        mockAxios.onGet('/urbanisme/quartier').reply(200, {numnom: "num", parcelle: "test"});
+        mockAxios.onGet(`${URBANISMEAPP_URL}/adsSecteurInstruction`).reply(200, {nom: "nom", ini_instru: "ini"});
+        mockAxios.onGet(`${URBANISMEAPP_URL}/adsAutorisation`).reply(200, {numdossier: [{numdossier: "test"}]});
+        mockAxios.onGet(`${URBANISMEAPP_URL}/quartier`).reply(200, {numnom: "num", parcelle: "test"});
 
         const urbanismeLayer = {id: URBANISME_RASTER_LAYER_ID, name: "URBANISME_PARCELLE"};
         const layerMetaData = {features: [{id: "urbanisme_1", geometry: {type: "Polygon", coordinates: [[-1, 1], [-2, 2], [-3, 3], [-4, 4]]}, properties: {id_parc: "350238000BM0027"}}]};
