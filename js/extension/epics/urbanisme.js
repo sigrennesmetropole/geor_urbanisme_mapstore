@@ -273,7 +273,8 @@ export const getFeatureInfoEpic = (action$, { getState }) =>
         !isEmpty(activeToolSelector(getState()))
         )
         .switchMap(({ layerMetadata }) => {
-            const parcelleId = layerMetadata.features?.[0]?.properties?.id_parc || "";
+            const {idParcelleKey} = configSelector(getState()) ?? {};
+            const parcelleId = layerMetadata.features?.[0]?.properties?.[idParcelleKey ?? "id_parc"] || "";
             const activeTool = activeToolSelector(getState());
             if (isEmpty(parcelleId)) {
                 return Rx.Observable.of(

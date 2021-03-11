@@ -66,10 +66,12 @@ const updateEpicsName = () => {
  * @prop {string} [cfg.helpLink] help link configured for the help tool
  * @prop {string} [cfg.cadastrappUrl] cadastrapp service path url
  * @prop {string} [cfg.layer] name of the parcelle layer
+ * @prop {string} [cfg.idParcelleKey] the attribute of the feature to use as parcelle id. If missing, `id_parc` will be used.
  * @prop {string} [cfg.urbanismeappUrl] urbanisme app service path url
  * For example this will configure the help link and upon clicking on the help button in the toolbar, the link will be displayed in a new browser tab
  * ```
  * "cfg": {
+ *    "idParcelleKey": "id_parcelle",
  *    "helpUrl": "http://docs.georchestra.org/addon_urbanisme/",
  *    "cadastrappUrl": "/cadastrapp/services",
  *    "urbanismeappUrl": "/urbanisme",
