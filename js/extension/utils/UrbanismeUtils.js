@@ -64,11 +64,14 @@ export const getUrbanismePrintSpec = state => {
     // getScales calls internally getResolutions, that calls a map hook. Map hooks are not available for extensions.
     // so getScales works only on google marcator (the default, if hook is not present).
     const scales = newMap.resolutions ? getScalesForMap(newMap) : getScales();
-    const scaleForZoom = scales[getNearestZoom(newMap.zoom + 5, scales)];
+    const scaleForZoom = scales[getNearestZoom(newMap.zoom, scales, scales)];
     const layersFiltered = layers.flat.filter(
         l =>
-            (l.group === "background" && l.visibility && !l.loadingError) ||
-      l.id === URBANISME_RASTER_LAYER_ID
+            (l.group === "background"
+              && l.visibility
+              && !l.loadingError
+              && (l.type === 'osm' ? ["EPSG:4326", "EPSG:900913", "EPSG:4326"].includes(projection) : true )
+            ) || l.id === URBANISME_RASTER_LAYER_ID
     );
     const { latlng = {} } = clickedPointWithFeaturesSelector(state);
     const projectedCenter = reproject({ x: latlng.lng, y: latlng.lat }, "EPSG:4326", projection);
