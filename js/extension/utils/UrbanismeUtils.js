@@ -70,7 +70,7 @@ export const getUrbanismePrintSpec = state => {
             (l.group === "background"
               && l.visibility
               && !l.loadingError
-              && (l.type === 'osm' ? ["EPSG:900913", "EPSG:3857"].includes(projection) : true )
+              && (l.type === 'osm' ? ["EPSG:900913", "EPSG:3857"].includes(projection) : true ) // remove osm layer if projection is not compatible
             ) || l.id === URBANISME_RASTER_LAYER_ID
     );
     const { latlng = {} } = clickedPointWithFeaturesSelector(state);
