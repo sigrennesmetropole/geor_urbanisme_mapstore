@@ -13,7 +13,7 @@ import {
     getNearestZoom,
     getMapfishLayersSpecification
 } from "@mapstore/utils/PrintUtils";
-import { getScales } from "@mapstore/utils/MapUtils";
+import { getScales, dpi2dpu,  } from "@mapstore/utils/MapUtils";
 import { reproject } from "@mapstore/utils/CoordinatesUtils";
 import { layerSelectorWithMarkers } from "@mapstore/selectors/layers";
 import { clickedPointWithFeaturesSelector } from "@mapstore/selectors/mapInfo";
@@ -44,6 +44,12 @@ export const retryDownload = (response, fileName, retries = 60) => {
     });
 };
 
+
+export function getScalesForMap({projection, resolutions}, dpi) {
+    const dpu = dpi2dpu(dpi, projection);
+    return resolutions.map((resolution) => resolution * dpu);
+}
+
 /**
  * Generates the print specification
  * @param {object} state of the application
@@ -55,8 +61,10 @@ export const getUrbanismePrintSpec = state => {
     const dpi = spec?.resolution || 96;
     const newMap = map.present || {};
     const projection = newMap.projection || {};
-    const scales = getScales();
-    const scaleForZoom = scales[getNearestZoom(newMap.zoom, scales)];
+    // getScales calls internally getResolutions, that calls a map hook. Map hooks are not available for extensions.
+    // so getScales works only on google marcator (the default, if hook is not present).
+    const scales = newMap.resolutions ? getScalesForMap(newMap) : getScales();
+    const scaleForZoom = scales[getNearestZoom(newMap.zoom + 5, scales)];
     const layersFiltered = layers.flat.filter(
         l =>
             (l.group === "background" && l.visibility && !l.loadingError) ||
