@@ -26,6 +26,10 @@ import {
     LOAD_FEATURE_INFO,
     hideMapinfoMarker
 } from "@mapstore/actions/mapInfo";
+
+import { localConfigSelector } from '../../../MapStore2/web/client/selectors/localConfig';
+import proj4 from 'proj4';
+
 import {
     createControlEnabledSelector,
     measureSelector
@@ -79,6 +83,13 @@ export const setUpPluginEpic = (action$, store) =>
     action$.ofType(SET_UP).switchMap(() => {
         const state = store.getState();
         const isConfigLoaded = configLoadSelector(state);
+        // adds projections from localConfig.json
+        // The extension do not see the state proj4 of MapStore (can not reproject in custom CRS as mapstore does)
+        // so they have to be registered again in the extension.
+        const { projectionDefs = [] } = localConfigSelector(store.getState());
+        projectionDefs.forEach((proj) => {
+            proj4.defs(proj.code, proj.def);
+        });
         return isConfigLoaded
             ? Rx.Observable.empty()
             : Rx.Observable.defer(() => getConfiguration()).switchMap(({cadastreWMSURL}) =>
