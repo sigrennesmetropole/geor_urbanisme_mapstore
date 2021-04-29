@@ -2,7 +2,7 @@
     "locale": "fr-FR",
     "messages": {
         "urbanisme": {
-            "title": "Aménagement du territoire",
+            "title": "Urbanisme",
             "ads": {
                 "tooltip": "Renseignement d'urbanisme sur la fiche ADS",
                 "listOfAds": "Liste des ADS",
