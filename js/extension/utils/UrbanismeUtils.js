@@ -51,9 +51,15 @@ export function getScalesForMap({projection, resolutions}, dpi) {
     return resolutions.map((resolution) => resolution * dpu);
 }
 
+/**
+ * Parse WMTS layer to support mapfish specification of Georchestra
+ * @param {object} layer
+ * @param {object} state
+ * @return {object} parsed layer
+ */
 const parseLayer = (layer, state) => {
     let parsedLayer = layer;
-    if (layer?.type.toLowerCase() === "wmts") { // Update WMTS layer to support Mapfish specification
+    if (layer?.type.toLowerCase() === "wmts") {
         const _layer = getLayerFromName(state, layer.name);
         const srs = normalizeSRS(_layer.srs || 'EPSG:3857', _layer.allowedSRS);
         const projection = getProjection(srs);
