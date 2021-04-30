@@ -7,15 +7,16 @@
  */
 import { includes, isEmpty } from "lodash";
 import { saveAs } from "file-saver";
+import { get as getProjection } from 'ol/proj';
 
 import axios from "@mapstore/libs/ajax";
 import {
     getNearestZoom,
     getMapfishLayersSpecification
 } from "@mapstore/utils/PrintUtils";
-import { getScales, dpi2dpu,  } from "@mapstore/utils/MapUtils";
-import { reproject } from "@mapstore/utils/CoordinatesUtils";
-import { layerSelectorWithMarkers } from "@mapstore/selectors/layers";
+import { getScales, dpi2dpu } from "@mapstore/utils/MapUtils";
+import { reproject, normalizeSRS } from "@mapstore/utils/CoordinatesUtils";
+import { layerSelectorWithMarkers, getLayerFromName } from "@mapstore/selectors/layers";
 import { clickedPointWithFeaturesSelector } from "@mapstore/selectors/mapInfo";
 import { URBANISME_RASTER_LAYER_ID } from "@js/extension/constants";
 
@@ -50,6 +51,22 @@ export function getScalesForMap({projection, resolutions}, dpi) {
     return resolutions.map((resolution) => resolution * dpu);
 }
 
+const parseLayer = (layer, state) => {
+    let parsedLayer = layer;
+    if (layer?.type.toLowerCase() === "wmts") { // Update WMTS layer to support Mapfish specification
+        const _layer = getLayerFromName(state, layer.name);
+        const srs = normalizeSRS(_layer.srs || 'EPSG:3857', _layer.allowedSRS);
+        const projection = getProjection(srs);
+        const metersPerUnit = projection.getMetersPerUnit();
+        const resolutionToScale = r => r * metersPerUnit / 0.28E-3;
+        // eslint-disable-next-line no-unused-vars
+        let { "customParams ": customParams = {}, matrixIds = [], ...wmtsLayer } = layer || {};
+        wmtsLayer.matrices = matrixIds?.map(({resolution, ...rest}) => ({...rest, scaleDenominator: resolutionToScale(resolution) })) || [];
+        parsedLayer = wmtsLayer;
+    }
+    return parsedLayer;
+};
+
 /**
  * Generates the print specification
  * @param {object} state of the application
@@ -82,18 +99,13 @@ export const getUrbanismePrintSpec = state => {
             l.name === "GetFeatureInfoHighLight" &&
       includes(l.features[0].id, "urbanisme_parcelle")
     );
-
+    const baseLayers = getMapfishLayersSpecification([...layersFiltered], {...spec, projection}, "map");
+    const vectorLayers = getMapfishLayersSpecification([...clickedPointFeatures], spec, "map");
     // Update layerSpec to suit Urbanisme print specification
-    let layerSpec =
-    getMapfishLayersSpecification(
-        [...layersFiltered, ...clickedPointFeatures],
-        spec,
-        "map"
-    ) || [];
-    layerSpec = layerSpec
+    let layerSpec = ([...baseLayers, ...vectorLayers] || [])
         .map(
             ({ singleTile, extension, format, styles, styleProperty, ...layer }) => ({
-                ...layer,
+                ...parseLayer(layer, state),
                 ...(!isEmpty(extension) && { imageExtension: extension }),
                 ...(!isEmpty(format) && { imageFormat: format }),
                 ...(!isEmpty(styles) && styleProperty && layer.type === "Vector" && {
