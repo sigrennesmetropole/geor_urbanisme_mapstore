@@ -30,6 +30,7 @@ Basically, the Urbanisme plugin allows the user to query for the NRU and the ADS
 For example the plugin allows configuration of the following properties
 * *cadastrappUrl* - The path url of the cadastrapp services call 
 * *urbanismeappUrl* - The path url of the urbanisme services call 
+* *idParcelleKey* - the attribute name of the feature to use as parcelle id. If missing, `id_parc` will be used.
 * *layer* - The name of the parcelle layer used
 * *helpUrl* - Plugin specific help url for more details on the extension 
  ```
