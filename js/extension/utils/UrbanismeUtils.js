@@ -101,9 +101,7 @@ export const getUrbanismePrintSpec = state => {
 
     // Only first feature of NRU/ADS is used
     const clickedPointFeatures = layerSelectorWithMarkers(state).filter(
-        l =>
-            l.name === "GetFeatureInfoHighLight" &&
-      includes(l.features[0].id, "urbanisme_parcelle")
+        l => l.name === "GetFeatureInfoHighLight"
     );
     const baseLayers = getMapfishLayersSpecification([...layersFiltered], {...spec, projection}, "map");
     const vectorLayers = getMapfishLayersSpecification([...clickedPointFeatures], spec, "map");
