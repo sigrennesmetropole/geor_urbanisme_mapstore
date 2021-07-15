@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 import React, { useEffect } from "react";
+import ADSIcon from '../../../../assets/img/ADS.png';
 
 import Toolbar from "@mapstore/components/misc/toolbar/Toolbar";
 import Message from "@mapstore/components/I18N/Message";
@@ -66,14 +67,19 @@ const UrbanismeToolbar = ({
                     }}
                     buttons={[
                         {
-                            glyph: "info-sign",
+                            glyph: 'sheet',
                             tooltip: <Message msgId={'urbanisme.nru.tooltip'}/>,
                             bsStyle: activeTool === NRU ? "success" : "primary",
                             active: activeTool === NRU,
                             onClick: () => onToggleTool(NRU)
                         },
                         {
-                            glyph: "info-sign",
+                            text: <img src={ADSIcon} style={{
+                                width: 40,
+                                position: "relative",
+                                left: -
+                                3
+                            }}/>,
                             tooltip: <Message msgId={'urbanisme.ads.tooltip'}/>,
                             bsStyle: activeTool === ADS ? "success" : "primary",
                             active: activeTool === ADS,

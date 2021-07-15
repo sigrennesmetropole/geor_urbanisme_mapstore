@@ -5,7 +5,7 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import { includes, isEmpty } from "lodash";
+import { isEmpty } from "lodash";
 import { saveAs } from "file-saver";
 import { get as getProjection } from 'ol/proj';
 

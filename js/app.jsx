@@ -52,8 +52,6 @@ const appConfig = {
     appEpics: {}
 };
 
-
-
 /**
  * Define a custom list of plugins with:
  *
