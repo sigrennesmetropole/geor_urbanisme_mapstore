@@ -86,7 +86,7 @@ export const setUpPluginEpic = (action$, store) =>
         // adds projections from localConfig.json
         // The extension do not see the state proj4 of MapStore (can not reproject in custom CRS as mapstore does)
         // so they have to be registered again in the extension.
-        const { projectionDefs = [] } = localConfigSelector(store.getState());
+        const { projectionDefs = [] } = localConfigSelector(store.getState()) ?? {};
         projectionDefs.forEach((proj) => {
             proj4.defs(proj.code, proj.def);
         });
