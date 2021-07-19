@@ -175,6 +175,7 @@ export const clickOnMapEventEpic = (action$, { getState }) =>
                     Rx.Observable.of(toggleHighlightFeature(true)),
                     Rx.Observable.of(
                         featureInfoClick(point, layer),
+                        setAttributes(null),
                         loading(true, "dataLoading")
                     )
                 )

@@ -138,6 +138,9 @@ describe('Urbanisme EPICS', () => {
                         break;
                     case LOADING:
                         break;
+                    case SET_URBANISME_DATA:
+                        expect(action.property).toEqual(null); // clear previous data
+                        break;
                     default:
                         expect(true).toBe(false);
                     }
