@@ -30,6 +30,9 @@ export const getCommune = cgocommune => {
     return axios
         .get(`${cadastrappURL}/getCommune`, { params: { cgocommune } })
         .then(({ data }) => {
+            if (isEmpty(data)) {
+                return null;
+            }
             const [{ libcom_min: commune }] = data;
             return { commune };
         });
