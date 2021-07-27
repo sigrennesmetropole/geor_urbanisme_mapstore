@@ -63,6 +63,23 @@ describe('UrbanismeToolbar', () => {
         expect(includes(ADSButton.getAttribute('class'), 'active')).toBe(true);
     });
 
+    it('test reset tool of UrbanismeToolbar', () => {
+        const action = {
+            onToggleTool: () => {}
+        };
+        const spyOnToggleTool = expect.spyOn(action, "onToggleTool");
+        ReactDOM.render(<UrbanismeToolbar enabled onToggleTool={action.onToggleTool} urbanisme={{activeTool: "ADS"}}/>, document.getElementById("container"));
+        const container = document.getElementById('container');
+        expect(container).toBeTruthy();
+        const buttons = container.querySelectorAll("button");
+        expect(buttons.length).toBe(4);
+        // Active tool
+        const ADSButton = buttons[1];
+        TestUtils.Simulate.click(ADSButton);
+        expect(spyOnToggleTool).toHaveBeenCalled();
+        expect(spyOnToggleTool.calls[0].arguments[0]).toBe(null);
+    });
+
     it('test UrbanismeToolbar close toolbar', () => {
         const actions = {
             onToggleControl: () => {}
