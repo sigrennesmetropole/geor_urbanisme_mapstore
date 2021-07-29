@@ -71,7 +71,7 @@ const UrbanismeToolbar = ({
                             tooltip: <Message msgId={'urbanisme.nru.tooltip'}/>,
                             bsStyle: activeTool === NRU ? "success" : "primary",
                             active: activeTool === NRU,
-                            onClick: () => onToggleTool(NRU)
+                            onClick: () => onToggleTool(activeTool === NRU ? null : NRU)
                         },
                         {
                             text: <img src={ADSIcon} style={{
@@ -83,7 +83,7 @@ const UrbanismeToolbar = ({
                             tooltip: <Message msgId={'urbanisme.ads.tooltip'}/>,
                             bsStyle: activeTool === ADS ? "success" : "primary",
                             active: activeTool === ADS,
-                            onClick: () => onToggleTool(ADS)
+                            onClick: () => onToggleTool(activeTool === ADS ? null : ADS)
                         },
                         {
                             glyph: "question-sign",
