@@ -13,8 +13,7 @@ export const DEFAULT_CADASTRAPP_URL = "/cadastrapp/services";
 export const DEFAULT_URBANISMEAPP_URL = "/urbanisme";
 export const URBANISME_TOOLS = {
     NRU: "NRU",
-    ADS: "ADS",
-    HELP: "HELP"
+    ADS: "ADS"
 };
 export const ADS_DEFAULTS = {
     parcelle: `Eléments d\'informations applicables à la parcelle cadastrale`,

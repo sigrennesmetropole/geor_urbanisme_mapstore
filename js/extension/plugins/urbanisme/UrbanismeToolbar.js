@@ -45,7 +45,7 @@ const UrbanismeToolbar = ({
         onSetUp({ layer, idParcelleKey });
     }, [setAPIURL, onSetUp]);
 
-    const { NRU, ADS, HELP } = URBANISME_TOOLS;
+    const { NRU, ADS } = URBANISME_TOOLS;
     const panelStyle = {
         right: 5,
         zIndex: 100,
@@ -87,7 +87,7 @@ const UrbanismeToolbar = ({
                         },
                         {
                             glyph: "question-sign",
-                            tooltip: HELP,
+                            tooltip: <Message msgId={'urbanisme.landPlanning.help'}/>,
                             bsStyle: "primary",
                             onClick: () =>
                                 window.open(

@@ -28,7 +28,8 @@
             },
             "landPlanning" : {
                 "print": "Stampa",
-                "cancel": "Annulla"
+                "cancel": "Annulla",
+                "help": "Aiuto"
             }
         }
     }
