@@ -28,7 +28,8 @@
             },
             "landPlanning" : {
                 "print": "Drucken",
-                "cancel": "Stornieren"
+                "cancel": "Stornieren",
+                "help": "Hilfe"
             }
         }
     }
