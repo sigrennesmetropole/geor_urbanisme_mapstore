@@ -12,7 +12,10 @@ import {
     LOADING,
     TOGGLE_VIEWER_PANEL,
     TOGGLE_TOOL,
-    SET_URBANISME_DATA, SET_UP
+    SET_URBANISME_DATA, SET_UP,
+    URBANISME_FEATURE_INFO_CLICK,
+    URBANISME_HIGHLIGHT_FEATURE,
+    URBANISME_RESET_FEATURE_HIGHLIGHT
 } from "../actions/urbanisme";
 
 const initialState = {
@@ -35,6 +38,23 @@ export default function urbanisme(state = initialState, action) {
     case TOGGLE_VIEWER_PANEL: {
         return set("showGFIPanel", action.enabled, state);
     }
+    case URBANISME_FEATURE_INFO_CLICK: {
+        return {...state,
+            clickPoint: action.point,
+            clickLayer: action.layer || null,
+            itemId: action.itemId || null,
+            overrideParams: action.overrideParams || null,
+            filterNameList: action.filterNameList || null
+        };
+    }
+    case URBANISME_HIGHLIGHT_FEATURE:
+        return {...state,
+            highlightedFeature: action.feature
+        };
+    case URBANISME_RESET_FEATURE_HIGHLIGHT:
+        return {...state,
+            highlightedFeature: null
+        };
     default:
         return state;
     }

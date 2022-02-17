@@ -7,6 +7,7 @@
  */
 
 export const URBANISME_RASTER_LAYER_ID = "__URBANISME_RASTER_LAYER__";
+export const URBANISME_VECTOR_LAYER_ID = "__URBANISME_VECTOR_LAYER__";
 export const CONTROL_NAME = "urbanisme";
 export const DEFAULT_URBANISME_LAYER = "urbanisme_parcelle";
 export const DEFAULT_CADASTRAPP_URL = "/cadastrapp/services";
@@ -15,6 +16,8 @@ export const URBANISME_TOOLS = {
     NRU: "NRU",
     ADS: "ADS"
 };
+export const URBANISME_OWNER = "URBANISME";
+
 export const ADS_DEFAULTS = {
     parcelle: `Eléments d\'informations applicables à la parcelle cadastrale`,
     secteur: `Secteur d\'instruction :`,
@@ -23,3 +26,20 @@ export const ADS_DEFAULTS = {
 };
 
 export const HELP_LINK_DEFAULT = 'http://docs.georchestra.org/addon_urbanisme/';
+
+export const LAYER_STYLES = {
+    selected: {
+        "fillColor": "#81BEF7",
+        "opacity": 0.6,
+        "fillOpacity": 0.6,
+        "color": "#111111",
+        "weight": 2
+    },
+    "default": {
+        "fillColor": "#222111",
+        "opacity": 0.4,
+        "fillOpacity": 0.4,
+        "color": "#111222",
+        "weight": 2
+    }
+};
