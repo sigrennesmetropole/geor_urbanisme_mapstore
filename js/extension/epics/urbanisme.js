@@ -54,7 +54,7 @@ import {
     TOGGLE_VIEWER_PANEL,
     TOGGLE_TOOL,
     URBANISME_FEATURE_INFO_CLICK,
-    URBANISME_HIGHLIGHT_FEATURE
+    URBANISME_HIGHLIGHT_FEATURE, URBANISME_RESET_FEATURE_HIGHLIGHT
 } from "../actions/urbanisme";
 import {
     configSelector,
@@ -291,7 +291,7 @@ export const onClosePanelEpic = action$ =>
         .ofType(TOGGLE_VIEWER_PANEL)
         .filter(({enabled}) => !enabled)
         .switchMap(() =>
-            Rx.Observable.of(hideMapinfoMarker(), toggleHighlightFeature(false))
+            Rx.Observable.of(resetFeatureHighlight())
         );
 
 /**
@@ -305,8 +305,7 @@ export const onToogleToolEpic = action$ =>
         .ofType(TOGGLE_TOOL)
         .switchMap(() =>
             Rx.Observable.from([
-                hideMapinfoMarker(),
-                toggleHighlightFeature(false),
+                resetFeatureHighlight(),
                 setAttributes(null),
                 toggleGFIPanel(false)
             ])
@@ -477,7 +476,7 @@ export const highlightFeatureEpic = (action$, {
     getState = () => {
     }
 }) =>
-    action$.ofType(URBANISME_HIGHLIGHT_FEATURE)
+    action$.ofType(URBANISME_HIGHLIGHT_FEATURE, URBANISME_RESET_FEATURE_HIGHLIGHT)
         .switchMap(() => {
             const state = getState();
             const enabled = urbanimseControlSelector(state);
