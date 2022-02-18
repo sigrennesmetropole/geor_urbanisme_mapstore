@@ -15,10 +15,13 @@ import {
     getMapfishLayersSpecification
 } from "@mapstore/utils/PrintUtils";
 import { getScales, dpi2dpu } from "@mapstore/utils/MapUtils";
-import { reproject, normalizeSRS } from "@mapstore/utils/CoordinatesUtils";
-import { layerSelectorWithMarkers, getLayerFromName } from "@mapstore/selectors/layers";
-import { clickedPointWithFeaturesSelector } from "@mapstore/selectors/mapInfo";
-import { URBANISME_RASTER_LAYER_ID } from "@js/extension/constants";
+import {reproject, normalizeSRS} from "@mapstore/utils/CoordinatesUtils";
+import { getLayerFromName } from "@mapstore/selectors/layers";
+import {
+    clickPointSelector,
+    urbanismeLayerSelector, urbanismePlotFeaturesSelector
+} from "@js/extension/selectors/urbanisme";
+import {geoJSONToLayer} from "@mapstore/utils/LayersUtils";
 
 /**
  * Sets the state of the viewer panel (open/close)
@@ -94,15 +97,18 @@ export const getUrbanismePrintSpec = state => {
               && l.visibility
               && !l.loadingError
               && (l.type === 'osm' ? ["EPSG:900913", "EPSG:3857"].includes(projection) : true ) // remove osm layer if projection is not compatible
-            ) || l.id === URBANISME_RASTER_LAYER_ID
-    );
-    const { latlng = {} } = clickedPointWithFeaturesSelector(state);
+            )
+    ).concat([urbanismeLayerSelector(state)]);
+
+    const { latlng = {} } = clickPointSelector(state);
     const projectedCenter = reproject({ x: latlng.lng, y: latlng.lat }, "EPSG:4326", projection);
 
     // Only first feature of NRU/ADS is used
-    const clickedPointFeatures = layerSelectorWithMarkers(state).filter(
-        l => l.name === "GetFeatureInfoHighLight"
-    );
+    const clickedPointFeatures = [geoJSONToLayer({
+        type: 'FeatureCollection',
+        features: urbanismePlotFeaturesSelector(state)
+    }, 'selectedPlot')];
+
     const baseLayers = getMapfishLayersSpecification([...layersFiltered], {...spec, projection}, "map");
     const vectorLayers = getMapfishLayersSpecification([...clickedPointFeatures], spec, "map");
     // Update layerSpec to suit Urbanisme print specification
