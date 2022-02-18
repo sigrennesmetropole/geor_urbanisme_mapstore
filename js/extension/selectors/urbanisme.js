@@ -9,12 +9,12 @@ import {createStructuredSelector} from 'reselect';
 
 import {additionalLayersSelector} from "@mapstore/selectors/additionallayers";
 
-import {LAYER_STYLES, URBANISME_RASTER_LAYER_ID, URBANISME_VECTOR_LAYER_ID} from "../constants";
+import {URBANISME_RASTER_LAYER_ID, URBANISME_VECTOR_LAYER_ID} from "../constants";
 
-import {get} from 'lodash';
+import {get, omit} from 'lodash';
 import {mapSelector} from "@mapstore/selectors/map";
 import {currentLocaleSelector} from "@mapstore/selectors/locale";
-import {generalInfoFormatSelector} from "@mapstore/selectors/mapInfo";
+import {generalInfoFormatSelector, highlightStyleSelector} from "@mapstore/selectors/mapInfo";
 
 export const configLoadSelector = state => state?.urbanisme?.configLoading;
 
@@ -62,7 +62,7 @@ export const identifyOptionsSelector = createStructuredSelector({
  * @param {object} state the application state
  */
 export function urbanismePlotFeaturesSelector(state) {
-    const defaultStyle = LAYER_STYLES.selected;
+    const defaultStyle = omit(highlightStyleSelector(state), ['radius']);
     const features = state.urbanisme?.highlightedFeature || [];
     return features.map((feature) => {
         return {
@@ -71,4 +71,7 @@ export function urbanismePlotFeaturesSelector(state) {
         };
     });
 }
+
+export const urbanismePlotFeatureCrsSelector = state => state.urbanisme?.featureCrs;
+
 
