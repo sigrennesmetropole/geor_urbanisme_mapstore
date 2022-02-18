@@ -26,20 +26,3 @@ export const ADS_DEFAULTS = {
 };
 
 export const HELP_LINK_DEFAULT = 'http://docs.georchestra.org/addon_urbanisme/';
-
-export const LAYER_STYLES = {
-    selected: {
-        "fillColor": "#81BEF7",
-        "opacity": 0.6,
-        "fillOpacity": 0.6,
-        "color": "#111111",
-        "weight": 2
-    },
-    "default": {
-        "fillColor": "#222111",
-        "opacity": 0.4,
-        "fillOpacity": 0.4,
-        "color": "#111222",
-        "weight": 2
-    }
-};

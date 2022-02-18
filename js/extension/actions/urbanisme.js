@@ -134,11 +134,12 @@ export function featureInfoClick(point, layer, filterNameList = [], overridePara
 }
 
 
-export function highlightFeature(point, feature) {
+export function highlightFeature(point, feature, featureCrs) {
     return {
         type: URBANISME_HIGHLIGHT_FEATURE,
         point,
-        feature
+        feature,
+        featureCrs
     };
 }
 

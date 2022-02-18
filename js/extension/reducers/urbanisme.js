@@ -49,11 +49,13 @@ export default function urbanisme(state = initialState, action) {
     }
     case URBANISME_HIGHLIGHT_FEATURE:
         return {...state,
-            highlightedFeature: action.feature
+            highlightedFeature: action.feature,
+            featureCrs: action.featureCrs
         };
     case URBANISME_RESET_FEATURE_HIGHLIGHT:
         return {...state,
-            highlightedFeature: null
+            highlightedFeature: null,
+            featureCrs: null
         };
     default:
         return state;
