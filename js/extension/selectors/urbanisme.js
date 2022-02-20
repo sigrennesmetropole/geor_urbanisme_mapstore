@@ -11,10 +11,10 @@ import {additionalLayersSelector} from "@mapstore/selectors/additionallayers";
 
 import {URBANISME_RASTER_LAYER_ID, URBANISME_VECTOR_LAYER_ID} from "../constants";
 
-import {get, omit} from 'lodash';
+import {get} from 'lodash';
 import {mapSelector} from "@mapstore/selectors/map";
 import {currentLocaleSelector} from "@mapstore/selectors/locale";
-import {generalInfoFormatSelector, highlightStyleSelector} from "@mapstore/selectors/mapInfo";
+import {generalInfoFormatSelector} from "@mapstore/selectors/mapInfo";
 
 export const configLoadSelector = state => state?.urbanisme?.configLoading;
 
@@ -58,20 +58,17 @@ export const identifyOptionsSelector = createStructuredSelector({
 });
 
 /**
- * Gets the current features to plot.
+ * Gets the current features to draw.
  * @param {object} state the application state
  */
 export function urbanismePlotFeaturesSelector(state) {
-    const defaultStyle = omit(highlightStyleSelector(state), ['radius']);
-    const features = state.urbanisme?.highlightedFeature || [];
-    return features.map((feature) => {
-        return {
-            ...feature,
-            style: defaultStyle
-        };
-    });
+    return state.urbanisme?.highlightedFeature || [];
 }
 
+/**
+ * Gets the CRS for highlighted feature.
+ * @param {object} state the application state
+ */
 export const urbanismePlotFeatureCrsSelector = state => state.urbanisme?.featureCrs;
 
 

@@ -15,7 +15,12 @@ import {
     SET_URBANISME_DATA,
     setAttributes,
     toggleGFIPanel,
-    TOGGLE_VIEWER_PANEL
+    TOGGLE_VIEWER_PANEL,
+    featureInfoClick,
+    URBANISME_FEATURE_INFO_CLICK,
+    highlightFeature,
+    URBANISME_HIGHLIGHT_FEATURE,
+    resetFeatureHighlight, URBANISME_RESET_FEATURE_HIGHLIGHT
 } from "../urbanisme";
 
 describe('Test correctness of the urbanisme actions', () => {
@@ -44,5 +49,28 @@ describe('Test correctness of the urbanisme actions', () => {
         expect(action).toExist();
         expect(action.type).toBe(TOGGLE_VIEWER_PANEL);
         expect(action.enabled).toEqual(true);
+    });
+    it('featureInfoClick', () => {
+        const action = featureInfoClick({}, 'test');
+        expect(action).toExist();
+        expect(action.type).toBe(URBANISME_FEATURE_INFO_CLICK);
+        expect(action.point).toEqual({});
+        expect(action.layer).toBe('test');
+        expect(action.filterNameList).toEqual([]);
+        expect(action.overrideParams).toEqual({});
+        expect(action.itemId).toBe(null);
+    });
+    it('highlightFeature', () => {
+        const action = highlightFeature({}, {}, 'test');
+        expect(action).toExist();
+        expect(action.type).toBe(URBANISME_HIGHLIGHT_FEATURE);
+        expect(action.point).toEqual({});
+        expect(action.feature).toEqual({});
+        expect(action.featureCrs).toBe('test');
+    });
+    it('resetFeatureHighlight', () => {
+        const action = resetFeatureHighlight();
+        expect(action).toExist();
+        expect(action.type).toBe(URBANISME_RESET_FEATURE_HIGHLIGHT);
     });
 });

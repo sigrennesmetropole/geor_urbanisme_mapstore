@@ -136,3 +136,18 @@ export const getUrbanismePrintSpec = state => {
         .reverse();
     return { layers: layerSpec, scaleForZoom, projectedCenter, dpi, projection };
 };
+
+/**
+ * Applies style to the features list
+ * @param features
+ * @param style
+ * @returns {*}
+ */
+export const styleFeatures = (features, style) => {
+    return features.map((feature) => {
+        return {
+            ...feature,
+            style
+        };
+    });
+};

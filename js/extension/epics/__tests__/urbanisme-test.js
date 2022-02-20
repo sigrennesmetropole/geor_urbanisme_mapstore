@@ -10,26 +10,72 @@ import expect from 'expect';
 import { testEpic, addTimeoutEpic } from '@mapstore/epics/__tests__/epicTestUtils';
 import { toggleControl, TOGGLE_CONTROL, setControlProperty } from '@mapstore/actions/controls';
 import { clickOnMap } from '@mapstore/actions/map';
-import { PURGE_MAPINFO_RESULTS, TOGGLE_HIGHLIGHT_FEATURE,
-    TOGGLE_MAPINFO_STATE, FEATURE_INFO_CLICK, HIDE_MAPINFO_MARKER, loadFeatureInfo } from '@mapstore/actions/mapInfo';
-import { ADD_LAYER, REMOVE_LAYER } from '@mapstore/actions/layers';
+import { PURGE_MAPINFO_RESULTS, TOGGLE_MAPINFO_STATE, loadFeatureInfo } from '@mapstore/actions/mapInfo';
 
-import { setUpPluginEpic, toggleLandPlanningEpic,
-    cleanUpUrbanismeEpic, clickOnMapEventEpic, closeOnMeasureEnabledEpic, getFeatureInfoEpic, onClosePanelEpic, onToogleToolEpic } from '../urbanisme';
+import {
+    setUpPluginEpic,
+    toggleLandPlanningEpic,
+    cleanUpUrbanismeEpic,
+    clickOnMapEventEpic,
+    closeOnMeasureEnabledEpic,
+    getFeatureInfoEpic,
+    onClosePanelEpic,
+    onToogleToolEpic,
+    updateAdditionalLayerEpic, highlightFeatureEpic
+} from '../urbanisme';
 import {
     setUp,
     LOADING,
     SET_CONFIG,
     TOGGLE_TOOL,
     TOGGLE_VIEWER_PANEL,
-    SET_URBANISME_DATA, toggleGFIPanel, toggleUrbanismeTool
+    SET_URBANISME_DATA,
+    toggleGFIPanel,
+    toggleUrbanismeTool,
+    URBANISME_FEATURE_INFO_CLICK,
+    URBANISME_RESET_FEATURE_HIGHLIGHT, highlightFeature, resetFeatureHighlight, URBANISME_HIGHLIGHT_FEATURE
 } from '../../actions/urbanisme';
-import {DEFAULT_CADASTRAPP_URL, DEFAULT_URBANISMEAPP_URL, URBANISME_RASTER_LAYER_ID} from '../../constants';
+import {
+    DEFAULT_CADASTRAPP_URL,
+    DEFAULT_URBANISMEAPP_URL,
+    URBANISME_RASTER_LAYER_ID,
+    URBANISME_VECTOR_LAYER_ID
+} from '../../constants';
 import axios from 'axios';
 import MockAdapter from "axios-mock-adapter";
 import {setAPIURL} from "@js/extension/api";
+import {REMOVE_ADDITIONAL_LAYER, UPDATE_ADDITIONAL_LAYER} from "@mapstore/actions/additionallayers";
 const CADASTRAPP_URL = DEFAULT_CADASTRAPP_URL;
 const URBANISMEAPP_URL = DEFAULT_URBANISMEAPP_URL;
+
+const layersList = [
+    {
+        id: URBANISME_RASTER_LAYER_ID,
+        owner: 'URBANISME',
+        actionType: 'overlay',
+        options: {
+            id: URBANISME_RASTER_LAYER_ID,
+            type: 'wms',
+            name: 'urbanisme_parcelle',
+            url: 'layer_url',
+            visibility: true,
+            search: {}
+        }
+    },
+    {
+        id: URBANISME_VECTOR_LAYER_ID,
+        owner: 'URBANISME',
+        actionType: 'overlay',
+        options: {
+            id: URBANISME_VECTOR_LAYER_ID,
+            features: [],
+            type: 'vector',
+            name: 'selectedPlot',
+            visibility: true
+        }
+    }
+];
+
 describe('Urbanisme EPICS', () => {
     let mockAxios;
     setAPIURL();
@@ -65,12 +111,9 @@ describe('Urbanisme EPICS', () => {
                 expect(actions.length).toBe(4);
                 actions.map(action=> {
                     switch (action.type) {
-                    case ADD_LAYER:
-                        expect(action.layer).toBeTruthy();
-                        expect(action.layer.id).toBe(URBANISME_RASTER_LAYER_ID);
-                        break;
-                    case TOGGLE_HIGHLIGHT_FEATURE:
-                        expect(action.enabled).toBe(true);
+                    case UPDATE_ADDITIONAL_LAYER:
+                        expect(action.options).toBeTruthy();
+                        expect([URBANISME_RASTER_LAYER_ID, URBANISME_VECTOR_LAYER_ID].includes(action.options.id)).toBeTruthy();
                         break;
                     case TOGGLE_MAPINFO_STATE:
                         break;
@@ -89,7 +132,7 @@ describe('Urbanisme EPICS', () => {
         const state = {
             controls: { urbanisme: { enabled: false }},
             urbanisme: { config: { cadastreWMSURL: "/cadastreWMSURL"}},
-            layers: {flat: [{id: URBANISME_RASTER_LAYER_ID, name: "URBANISME_PARCELLE"}]},
+            additionallayers: layersList,
             mapInfo: {enabled: false}
         };
         testEpic(
@@ -100,8 +143,8 @@ describe('Urbanisme EPICS', () => {
                 expect(actions.length).toBe(3);
                 actions.map(action=>{
                     switch (action.type) {
-                    case REMOVE_LAYER:
-                        expect(action.layerId).toBe(URBANISME_RASTER_LAYER_ID);
+                    case REMOVE_ADDITIONAL_LAYER:
+                        expect([URBANISME_RASTER_LAYER_ID, URBANISME_VECTOR_LAYER_ID].includes(action.id)).toBeTruthy();
                         break;
                     case PURGE_MAPINFO_RESULTS:
                         break;
@@ -120,7 +163,7 @@ describe('Urbanisme EPICS', () => {
         const state = {
             controls: { urbanisme: { enabled: true}},
             urbanisme: { activeTool: "NRU" },
-            layers: {flat: [{id: URBANISME_RASTER_LAYER_ID, name: "URBANISME_PARCELLE"}]},
+            additionallayers: layersList,
             mapInfo: {enabled: false}
         };
         testEpic(
@@ -131,9 +174,7 @@ describe('Urbanisme EPICS', () => {
                 expect(actions.length).toBe(3);
                 actions.map(action=>{
                     switch (action.type) {
-                    case TOGGLE_HIGHLIGHT_FEATURE:
-                        break;
-                    case FEATURE_INFO_CLICK:
+                    case URBANISME_FEATURE_INFO_CLICK:
                         expect(action.point).toBeTruthy();
                         break;
                     case LOADING:
@@ -154,7 +195,7 @@ describe('Urbanisme EPICS', () => {
         const state = {
             controls: { urbanisme: { enabled: false}},
             urbanisme: { activeTool: "NRU", showGFIPanel: true },
-            layers: {flat: [{id: URBANISME_RASTER_LAYER_ID, name: "URBANISME_PARCELLE"}]},
+            additionallayers: layersList,
             mapInfo: {enabled: false}
         };
         testEpic(
@@ -174,7 +215,7 @@ describe('Urbanisme EPICS', () => {
                     case SET_URBANISME_DATA:
                         expect(action.property).toBe(null);
                         break;
-                    case TOGGLE_HIGHLIGHT_FEATURE:
+                    case URBANISME_RESET_FEATURE_HIGHLIGHT:
                         break;
                     default:
                         expect(true).toBe(false);
@@ -237,10 +278,7 @@ describe('Urbanisme EPICS', () => {
                 expect(actions.length).toBe(1);
                 actions.map(action=>{
                     switch (action.type) {
-                    case HIDE_MAPINFO_MARKER:
-                        break;
-                    case TOGGLE_HIGHLIGHT_FEATURE:
-                        expect(action.enabled).toBe(false);
+                    case URBANISME_RESET_FEATURE_HIGHLIGHT:
                         break;
                     default:
                         expect(true).toBe(false);
@@ -251,7 +289,7 @@ describe('Urbanisme EPICS', () => {
             state);
     });
 
-    it('getFeatureInfoEpic load feature info', (done) => {
+    it('getFeatureInfoEpic load feature info NRU tool OLD', (done) => {
         mockAxios.onGet(`${CADASTRAPP_URL}/getCommune`).reply(200, [{libcom_min: "min"}]);
         mockAxios.onGet(`${CADASTRAPP_URL}/getParcelle`).reply(200, [{parcelle: "parcelle", ccopre: "ccopre",
             ccosec: "ccosec", dnupla: "dnupla", dnvoiri: "dnvoiri", cconvo: "cconvo", dvoilib: "dvoilib", dcntpa: "dcntpa"}]);
@@ -263,10 +301,13 @@ describe('Urbanisme EPICS', () => {
         mockAxios.onGet('/urbanisme/renseignUrbaInfos').reply(200, { date_pci: '2020/10/11', date_ru: '06/2020'});
 
         const urbanismeLayer = {id: URBANISME_RASTER_LAYER_ID, name: "URBANISME_PARCELLE"};
-        const layerMetaData = {features: [{id: "urbanisme_1", geometry: {type: "Polygon", coordinates: [[-1, 1], [-2, 2], [-3, 3], [-4, 4]]}, properties: {id_parc: "350238000BM0027"}}]};
+        const layerMetaData = {
+            features: [{id: "urbanisme_1", geometry: {type: "Polygon", coordinates: [[-1, 1], [-2, 2], [-3, 3], [-4, 4]]}, properties: {id_parc: "350238000BM0027"}}],
+            featuresCrs: "EPSG:4326"
+        };
         const state = { controls: { measure: { enabled: true}, urbanisme: { enabled: true}},
             urbanisme: { activeTool: "NRU"},
-            layers: {flat: [urbanismeLayer]}
+            additionalLayers: [urbanismeLayer]
         };
         const attributes = {"commune": "min", "parcelle": "parcelle", "numero": "dnupla", "contenanceDGFiP": "dcntpa", "codeSection": "ccopreccosec", "adresseCadastrale": "dnvoiri cconvo dvoilib", "libelles": ["Test"], "nomProprio": "", "codeProprio": "codeProprio", "adresseProprio": "  ", "surfaceSIG": "surfc", "datePCI": "0/10/11", "dateRU": "06/2020"};
         testEpic(
@@ -295,6 +336,7 @@ describe('Urbanisme EPICS', () => {
             },
             state);
     });
+
     it('getFeatureInfoEpic returns even with empty data', (done) => {
         mockAxios.onGet(`${CADASTRAPP_URL}/getCommune`).reply(200, []);
         mockAxios.onGet(`${CADASTRAPP_URL}/getParcelle`).reply(200, []);
@@ -305,11 +347,14 @@ describe('Urbanisme EPICS', () => {
         });
         mockAxios.onGet('/urbanisme/renseignUrbaInfos').reply(200, { date_pci: '2020/10/11', date_ru: '06/2020'});
 
-        const urbanismeLayer = {id: URBANISME_RASTER_LAYER_ID, name: "URBANISME_PARCELLE"};
-        const layerMetaData = {features: [{id: "urbanisme_1", geometry: {type: "Polygon", coordinates: [[-1, 1], [-2, 2], [-3, 3], [-4, 4]]}, properties: {id_parc: "350238000BM0027"}}]};
+        const urbanismeLayer = layersList[0].options;
+        const layerMetaData = {
+            features: [{id: "urbanisme_1", type: "Feature", geometry: {type: "Polygon", coordinates: [[-1, 1], [-2, 2], [-3, 3], [-4, 4]]}, properties: {id_parc: "350238000BM0027"}}],
+            featuresCrs: "EPSG:4326"
+        };
         const state = { controls: { measure: { enabled: true}, urbanisme: { enabled: true}},
             urbanisme: { activeTool: "NRU"},
-            layers: {flat: [urbanismeLayer]}
+            additionalLayers: [urbanismeLayer]
         };
         const attributes = {"datePCI": "0/10/11", "dateRU": "06/2020", libelles: []};
         testEpic(
@@ -339,16 +384,20 @@ describe('Urbanisme EPICS', () => {
             state);
     });
 
-    it('getFeatureInfoEpic load feature info', (done) => {
+    it('getFeatureInfoEpic load feature info ADS tool', (done) => {
         mockAxios.onGet(`${URBANISMEAPP_URL}/adsSecteurInstruction`).reply(200, {nom: "nom", ini_instru: "ini"});
         mockAxios.onGet(`${URBANISMEAPP_URL}/adsAutorisation`).reply(200, {numdossier: [{numdossier: "test"}]});
         mockAxios.onGet(`${URBANISMEAPP_URL}/quartier`).reply(200, {numnom: "num", parcelle: "test"});
 
-        const urbanismeLayer = {id: URBANISME_RASTER_LAYER_ID, name: "URBANISME_PARCELLE"};
-        const layerMetaData = {features: [{id: "urbanisme_1", geometry: {type: "Polygon", coordinates: [[-1, 1], [-2, 2], [-3, 3], [-4, 4]]}, properties: {id_parc: "350238000BM0027"}}]};
-        const state = { controls: { measure: { enabled: true}, urbanisme: { enabled: true}},
+        const urbanismeLayer = layersList[0].options;
+        const layerMetaData = {
+            features: [{id: "urbanisme_1", type: "Feature", geometry: {type: "Polygon", coordinates: [[-1, 1], [-2, 2], [-3, 3], [-4, 4]]}, properties: {id_parc: "350238000BM0027"}}],
+            featuresCrs: "EPSG:4326"
+        };
+        const state = {
+            controls: { measure: { enabled: true}, urbanisme: { enabled: true}},
             urbanisme: { activeTool: "ADS"},
-            layers: {flat: [urbanismeLayer]}
+            additionalLayers: [urbanismeLayer]
         };
         const attributes = {"nom": "nom", "ini_instru": "ini", "num_dossier": ["test"], "num_nom": "num", "id_parcelle": "test"};
         testEpic(
@@ -381,16 +430,13 @@ describe('Urbanisme EPICS', () => {
     it('onToogleToolEpic clean up activities of previous tool', (done) => {
         testEpic(
             onToogleToolEpic,
-            4,
+            3,
             toggleUrbanismeTool('NRU'),
             actions => {
-                expect(actions.length).toBe(4);
+                expect(actions.length).toBe(3);
                 actions.map(action=>{
                     switch (action.type) {
-                    case HIDE_MAPINFO_MARKER:
-                        break;
-                    case TOGGLE_HIGHLIGHT_FEATURE:
-                        expect(action.enabled).toBe(false);
+                    case URBANISME_RESET_FEATURE_HIGHLIGHT:
                         break;
                     case SET_URBANISME_DATA:
                         expect(action.property).toEqual(null);
@@ -406,4 +452,136 @@ describe('Urbanisme EPICS', () => {
             }, {});
     });
 
+    it('updateAdditionalLayerEpic on feature highlight test', (done) => {
+        const state = {
+            controls: { urbanisme: { enabled: true }, measure: {enabled: false}},
+            urbanisme: { config: { cadastreWMSURL: "/cadastreWMSURL"}},
+            mapInfo: {enabled: false}
+        };
+        const clickedPoint = {
+            pixel: {
+                x: 941,
+                y: 490
+            },
+            latlng: {
+                lat: 48.11045432031648,
+                lng: -1.6808223724365234
+            },
+            rawPos: [
+                -187108.2906135758,
+                6125250.209089858
+            ],
+            modifiers: {
+                alt: false,
+                ctrl: false,
+                metaKey: false,
+                shift: false
+            }
+        };
+        const layerMetaData = {
+            features: [{id: "urbanisme_1", type: "Feature", geometry: {type: "Polygon", coordinates: [[[-1, 1], [-2, 2], [-3, 3], [-4, 4]]]}, properties: {id_parc: "350238000BM0027"}}],
+            featuresCrs: "EPSG:4326"
+        };
+        testEpic(
+            updateAdditionalLayerEpic,
+            1,
+            highlightFeature(clickedPoint, [layerMetaData?.features[0]], layerMetaData.featuresCrs),
+            actions => {
+                expect(actions.length).toBe(1);
+                actions.map(action=>{
+                    switch (action.type) {
+                    case UPDATE_ADDITIONAL_LAYER:
+                        expect(action.id).toBe(URBANISME_VECTOR_LAYER_ID);
+                        expect(action.options.features.length).toBe(2);
+                        expect(action.options.features[0].id).toBe('urbanisme_1');
+                        expect(action.options.features[1].id).toBe('get-feature-info-point');
+                        break;
+                    default:
+                        expect(true).toBe(false);
+                    }
+                });
+                done();
+            }, state);
+    });
+
+    it('updateAdditionalLayerEpic on feature highlight reset test', (done) => {
+        const state = {
+            controls: { urbanisme: { enabled: true }, measure: {enabled: false}},
+            urbanisme: { config: { cadastreWMSURL: "/cadastreWMSURL"}},
+            mapInfo: {enabled: false}
+        };
+        testEpic(
+            updateAdditionalLayerEpic,
+            1,
+            resetFeatureHighlight(),
+            actions => {
+                expect(actions.length).toBe(1);
+                actions.map(action=>{
+                    switch (action.type) {
+                    case UPDATE_ADDITIONAL_LAYER:
+                        expect(action.id).toBe(URBANISME_VECTOR_LAYER_ID);
+                        expect(action.options.features.length).toBe(0);
+                        break;
+                    default:
+                        expect(true).toBe(false);
+                    }
+                });
+                done();
+            }, state);
+    });
+
+    it('highlightFeatureEpic test', (done) => {
+        const urbanismeLayer = layersList[0].options;
+        const layerMetaData = {
+            features: [{id: "urbanisme_1", type: "Feature", geometry: {type: "Polygon", coordinates: [[-1, 1], [-2, 2], [-3, 3], [-4, 4]]}, properties: {id_parc: "350238000BM0027"}}],
+            featuresCrs: "EPSG:4326"
+        };
+        const state = {
+            controls: { urbanisme: { enabled: true}},
+            urbanisme: {
+                config: { cadastreWMSURL: "/cadastreWMSURL"},
+                activeTool: "ADS",
+                clickPoint: {
+                    pixel: {
+                        x: 941,
+                        y: 490
+                    },
+                    latlng: {
+                        lat: 48.11045432031648,
+                        lng: -1.6808223724365234
+                    },
+                    rawPos: [
+                        -187108.2906135758,
+                        6125250.209089858
+                    ],
+                    modifiers: {
+                        alt: false,
+                        ctrl: false,
+                        metaKey: false,
+                        shift: false
+                    }
+                }},
+            additionalLayers: [urbanismeLayer]
+        };
+        testEpic(
+            highlightFeatureEpic,
+            1,
+            loadFeatureInfo(1, "Response", {service: "WMS", id: URBANISME_RASTER_LAYER_ID}, layerMetaData, urbanismeLayer),
+            actions => {
+                expect(actions.length).toBe(1);
+                actions.map(action=>{
+                    switch (action.type) {
+                    case URBANISME_HIGHLIGHT_FEATURE:
+                        expect(action.point).toEqual(state.urbanisme.clickPoint);
+                        expect(action.feature).toEqual([layerMetaData.features[0]]);
+                        expect(action.featureCrs).toBe(layerMetaData.featuresCrs);
+                        break;
+                    default:
+                        expect(true).toBe(false);
+                    }
+                });
+                done();
+            }, state);
+    });
 });
+

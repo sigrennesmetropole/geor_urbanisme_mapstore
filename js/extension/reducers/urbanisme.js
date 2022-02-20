@@ -41,10 +41,10 @@ export default function urbanisme(state = initialState, action) {
     case URBANISME_FEATURE_INFO_CLICK: {
         return {...state,
             clickPoint: action.point,
-            clickLayer: action.layer || null,
-            itemId: action.itemId || null,
-            overrideParams: action.overrideParams || null,
-            filterNameList: action.filterNameList || null
+            clickLayer: action.layer,
+            itemId: action.itemId,
+            overrideParams: action.overrideParams,
+            filterNameList: action.filterNameList
         };
     }
     case URBANISME_HIGHLIGHT_FEATURE:

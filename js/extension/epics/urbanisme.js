@@ -7,7 +7,7 @@
  */
 
 import * as Rx from "rxjs";
-import {get, isEmpty} from "lodash";
+import {get, isEmpty, omit} from "lodash";
 import uuid from 'uuid';
 
 import {SET_CONTROL_PROPERTY, TOGGLE_CONTROL, toggleControl} from "@mapstore/actions/controls";
@@ -61,9 +61,7 @@ import {
     overrideParamsSelector,
     printingSelector,
     urbanimseControlSelector,
-    urbanismeLayerSelector,
-    urbanismePlotFeatureCrsSelector,
-    urbanismePlotFeaturesSelector
+    urbanismeLayerSelector
 } from "../selectors/urbanisme";
 import {
     getAdsAutorisation,
@@ -88,7 +86,8 @@ import {localizedLayerStylesEnvSelector} from "@mapstore/selectors/localizedLaye
 import {buildIdentifyRequest, clickedPointToGeoJson, filterRequestParams} from "@mapstore/utils/MapInfoUtils";
 import {getFeatureInfo} from "@mapstore/api/identify";
 import {reprojectGeoJson} from "@mapstore/utils/CoordinatesUtils";
-import {mapInfoDisabledSelector, mapTriggerSelector} from "@mapstore/selectors/mapInfo";
+import {highlightStyleSelector, mapInfoDisabledSelector, mapTriggerSelector} from "@mapstore/selectors/mapInfo";
+import {styleFeatures} from "@js/extension/utils/UrbanismeUtils";
 
 /**
  * Ensures that config for the urbanisme tool is fetched and loaded
@@ -356,10 +355,8 @@ export const getFeatureInfoEpic = (action$, {getState}) =>
             const {idParcelleKey} = configSelector(getState()) ?? {};
             const parcelleId = layerMetadata.features?.[0]?.properties?.[idParcelleKey ?? "id_parc"] || "";
             const activeTool = activeToolSelector(getState());
-            const clickedPoint = clickPointSelector(getState());
             if (isEmpty(parcelleId)) {
                 return Rx.Observable.of(
-                    resetFeatureHighlight(),
                     loading(false, "dataLoading"),
                     setAttributes(null)
                 );
@@ -379,7 +376,6 @@ export const getFeatureInfoEpic = (action$, {getState}) =>
                     getRenseignUrbaInfos(codeCommune)
                 ).switchMap(
                     ([commune, parcelle, lisbelle, propPrio, proprioSurf, dates]) => {
-                        console.log('in set attributes NRU');
                         return Rx.Observable.of(
                             setAttributes({
                                 ...commune,
@@ -398,7 +394,6 @@ export const getFeatureInfoEpic = (action$, {getState}) =>
                     getAdsAutorisation(parcelleId),
                     getQuartier(parcelleId)
                 ).switchMap(([adsSecteurInstruction, adsAutorisation, quartier]) => {
-                    console.log('in set attributes ADS');
                     return Rx.Observable.of(
                         setAttributes({
                             ...adsSecteurInstruction,
@@ -410,8 +405,7 @@ export const getFeatureInfoEpic = (action$, {getState}) =>
                 );
             }
             return observable$.startWith(
-                toggleGFIPanel(true),
-                highlightFeature(clickedPoint, [layerMetadata.features?.[0]], layerMetadata.featuresCrs)
+                toggleGFIPanel(true)
             ).let(
                 wrapStartStop(
                     loading(true, "dataLoading"),
@@ -424,6 +418,35 @@ export const getFeatureInfoEpic = (action$, {getState}) =>
                         );
                     }
                 )
+            );
+        });
+
+/**
+ * Ensures that loaded feature is highlighted
+ * @memberof epics.urbanisme
+ * @param {observable} action$ manages `LOAD_FEATURE_INFO`
+ * @return {observable}
+ */
+export const highlightFeatureEpic = (action$, {getState}) =>
+    action$
+        .ofType(LOAD_FEATURE_INFO)
+        .filter(
+            ({layer}) =>
+                layer.id === URBANISME_RASTER_LAYER_ID &&
+                !printingSelector(getState()) &&
+                !isEmpty(activeToolSelector(getState()))
+        )
+        .switchMap(({layerMetadata}) => {
+            const {idParcelleKey} = configSelector(getState()) ?? {};
+            const clickedPoint = clickPointSelector(getState());
+            const parcelleId = layerMetadata.features?.[0]?.properties?.[idParcelleKey ?? "id_parc"] || "";
+            if (isEmpty(parcelleId)) {
+                return Rx.Observable.of(
+                    resetFeatureHighlight(),
+                );
+            }
+            return Rx.Observable.of(
+                highlightFeature(clickedPoint, [layerMetadata?.features[0]], layerMetadata.featuresCrs)
             );
         });
 
@@ -500,25 +523,24 @@ export const getUrbanismeFeatureInfoOnFeatureInfoClick = (action$, {
         });
 
 /**
- * Highlights feature
+ * Updates additional layer with vector data to show highlighted feature and click marker
  */
-export const highlightFeatureEpic = (action$, {
+export const updateAdditionalLayerEpic = (action$, {
     getState = () => {
     }
 }) =>
     action$.ofType(URBANISME_HIGHLIGHT_FEATURE, URBANISME_RESET_FEATURE_HIGHLIGHT)
-        .switchMap(({ point = {} }) => {
+        .switchMap(({ point = {}, feature, featureCrs, type }) => {
             const state = getState();
-            const styledFeatures = urbanismePlotFeaturesSelector(state);
-            const featureCrs = urbanismePlotFeatureCrsSelector(state);
             const enabled = urbanimseControlSelector(state);
-            if (enabled) {
+            if (enabled && type === URBANISME_HIGHLIGHT_FEATURE) {
+                const styledFeatures = styleFeatures(feature, omit(highlightStyleSelector(state), ["radius"]));
                 const features = styledFeatures && featureCrs ? styledFeatures.map( f => reprojectGeoJson(
                     f,
                     featureCrs,
                 )) : styledFeatures;
                 const markerFeature = clickedPointToGeoJson(point.latlng);
-                return Rx.Observable.from([
+                return Rx.Observable.of(
                     updateAdditionalLayer(
                         URBANISME_VECTOR_LAYER_ID,
                         URBANISME_OWNER,
@@ -530,9 +552,21 @@ export const highlightFeatureEpic = (action$, {
                             name: "selectedPlot",
                             visibility: true
                         })
-                ]);
+                );
             }
-            return Rx.Observable.empty();
+            return Rx.Observable.of(
+                updateAdditionalLayer(
+                    URBANISME_VECTOR_LAYER_ID,
+                    URBANISME_OWNER,
+                    'overlay',
+                    {
+                        id: URBANISME_VECTOR_LAYER_ID,
+                        features: [],
+                        type: "vector",
+                        name: "selectedPlot",
+                        visibility: true
+                    })
+            );
         });
 
 export default {
@@ -545,6 +579,7 @@ export default {
     onToogleToolEpic,
     getUrbanismeFeatureInfoOnFeatureInfoClick,
     highlightFeatureEpic,
+    updateAdditionalLayerEpic,
     closeOnMeasureEnabledEpic,
     closeOnMapHoverEnabledEpic,
     closeOnIdentifyEnabledEpic
