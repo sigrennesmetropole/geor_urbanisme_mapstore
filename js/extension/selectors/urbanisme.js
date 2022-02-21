@@ -5,9 +5,16 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import { getLayerFromId } from "@mapstore/selectors/layers";
+import {createStructuredSelector} from 'reselect';
 
-import { URBANISME_RASTER_LAYER_ID } from "../constants";
+import {additionalLayersSelector} from "@mapstore/selectors/additionallayers";
+
+import {URBANISME_RASTER_LAYER_ID, URBANISME_VECTOR_LAYER_ID} from "../constants";
+
+import {get} from 'lodash';
+import {mapSelector} from "@mapstore/selectors/map";
+import {currentLocaleSelector} from "@mapstore/selectors/locale";
+import {generalInfoFormatSelector} from "@mapstore/selectors/mapInfo";
 
 export const configLoadSelector = state => state?.urbanisme?.configLoading;
 
@@ -23,4 +30,45 @@ export const attributesSelector = state => state?.urbanisme?.attributes || {};
 
 export const urbanimseControlSelector = state => state?.controls?.urbanisme?.enabled || false;
 
-export const urbanismeLayerSelector = state => getLayerFromId(state, URBANISME_RASTER_LAYER_ID);
+export const urbanismeLayerSelector = state => {
+    const additionalLayers = additionalLayersSelector(state) ?? [];
+    return additionalLayers.filter(({id}) => id === URBANISME_RASTER_LAYER_ID)?.[0]?.options;
+};
+
+export const urbanismeVectorLayerSelector = state => {
+    const additionalLayers = additionalLayersSelector(state) ?? [];
+    return additionalLayers.filter(({id}) => id === URBANISME_VECTOR_LAYER_ID)?.[0]?.options;
+};
+
+export const clickPointSelector = state => state.urbanisme?.clickPoint;
+export const clickLayerSelector = state => state.urbanisme?.clickLayer;
+export const itemIdSelector = state => state.urbanisme?.itemId;
+export const overrideParamsSelector = state => state.urbanisme?.overrideParams || {};
+export const filterNameListSelector = state => state.urbanisme?.filterNameList || [];
+
+/**
+ * Defines the general options of the identifyTool to build the request
+ */
+export const identifyOptionsSelector = createStructuredSelector({
+    format: generalInfoFormatSelector,
+    map: mapSelector,
+    point: clickPointSelector,
+    currentLocale: currentLocaleSelector,
+    maxItems: (state) => get(state, "mapInfo.configuration.maxItems")
+});
+
+/**
+ * Gets the current features to draw.
+ * @param {object} state the application state
+ */
+export function urbanismePlotFeaturesSelector(state) {
+    return state.urbanisme?.highlightedFeature || [];
+}
+
+/**
+ * Gets the CRS for highlighted feature.
+ * @param {object} state the application state
+ */
+export const urbanismePlotFeatureCrsSelector = state => state.urbanisme?.featureCrs;
+
+

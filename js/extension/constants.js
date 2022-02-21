@@ -7,6 +7,7 @@
  */
 
 export const URBANISME_RASTER_LAYER_ID = "__URBANISME_RASTER_LAYER__";
+export const URBANISME_VECTOR_LAYER_ID = "__URBANISME_VECTOR_LAYER__";
 export const CONTROL_NAME = "urbanisme";
 export const DEFAULT_URBANISME_LAYER = "urbanisme_parcelle";
 export const DEFAULT_CADASTRAPP_URL = "/cadastrapp/services";
@@ -15,6 +16,8 @@ export const URBANISME_TOOLS = {
     NRU: "NRU",
     ADS: "ADS"
 };
+export const URBANISME_OWNER = "URBANISME";
+
 export const ADS_DEFAULTS = {
     parcelle: `Eléments d\'informations applicables à la parcelle cadastrale`,
     secteur: `Secteur d\'instruction :`,

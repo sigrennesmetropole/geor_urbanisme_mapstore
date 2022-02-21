@@ -8,15 +8,20 @@
 
 import expect from 'expect';
 
-import { configSelector,
+import {
+    configSelector,
     activeToolSelector,
     printingSelector,
     urbanimseControlSelector,
     attributesSelector,
     lpGFIPanelSelector,
-    urbanismeLayerSelector
+    urbanismeLayerSelector,
+    clickPointSelector,
+    urbanismePlotFeaturesSelector,
+    urbanismePlotFeatureCrsSelector,
+    urbanismeVectorLayerSelector
 } from '../urbanisme';
-import { URBANISME_RASTER_LAYER_ID, URBANISME_TOOLS } from '../../constants';
+import {URBANISME_RASTER_LAYER_ID, URBANISME_TOOLS, URBANISME_VECTOR_LAYER_ID} from '../../constants';
 
 describe('Urbanisme selectors', () => {
     it('test configSelector', () => {
@@ -79,15 +84,33 @@ describe('Urbanisme selectors', () => {
     });
     it('test urbanismeLayerSelector', () => {
         const state = {
-            layers: {
-                flat: [{
+            additionallayers: [
+                {
                     id: URBANISME_RASTER_LAYER_ID,
-                    type: "wms",
-                    name: "urbanisme_parcelle",
-                    url: "/geoserver/wms",
-                    visibility: true
-                }]
-            },
+                    owner: 'URBANISME',
+                    actionType: 'overlay',
+                    options: {
+                        id: URBANISME_RASTER_LAYER_ID,
+                        type: 'wms',
+                        name: 'urbanisme_parcelle',
+                        url: 'layer_url',
+                        visibility: true,
+                        search: {}
+                    }
+                },
+                {
+                    id: URBANISME_VECTOR_LAYER_ID,
+                    owner: 'URBANISME',
+                    actionType: 'overlay',
+                    options: {
+                        id: URBANISME_VECTOR_LAYER_ID,
+                        features: [],
+                        type: 'vector',
+                        name: 'selectedPlot',
+                        visibility: true
+                    }
+                }
+            ],
             urbanisme: {
                 config: {prop: "A"}
             }
@@ -95,5 +118,76 @@ describe('Urbanisme selectors', () => {
         const layer = urbanismeLayerSelector(state);
         expect(layer).toBeTruthy();
         expect(layer.id).toEqual(URBANISME_RASTER_LAYER_ID);
+    });
+    it('test urbanismeVectorLayerSelector', () => {
+        const state = {
+            additionallayers: [
+                {
+                    id: URBANISME_RASTER_LAYER_ID,
+                    owner: 'URBANISME',
+                    actionType: 'overlay',
+                    options: {
+                        id: URBANISME_RASTER_LAYER_ID,
+                        type: 'wms',
+                        name: 'urbanisme_parcelle',
+                        url: 'layer_url',
+                        visibility: true,
+                        search: {}
+                    }
+                },
+                {
+                    id: URBANISME_VECTOR_LAYER_ID,
+                    owner: 'URBANISME',
+                    actionType: 'overlay',
+                    options: {
+                        id: URBANISME_VECTOR_LAYER_ID,
+                        features: [],
+                        type: 'vector',
+                        name: 'selectedPlot',
+                        visibility: true
+                    }
+                }
+            ],
+            urbanisme: {
+                config: {prop: "A"}
+            }
+        };
+        const layer = urbanismeVectorLayerSelector(state);
+        expect(layer).toBeTruthy();
+        expect(layer.id).toEqual(URBANISME_VECTOR_LAYER_ID);
+    });
+    it('test clickPointSelector', () => {
+        const state = {
+            urbanisme: {
+                config: {prop: "A"},
+                clickPoint: { prop: "B"}
+            }
+        };
+        const point = clickPointSelector(state);
+        expect(point).toBeTruthy();
+        expect(point.prop).toBe("B");
+    });
+    it('test urbanismePlotFeaturesSelector', () => {
+        const state = {
+            urbanisme: {
+                config: {prop: "A"},
+                highlightedFeature: [{ prop: "test"}]
+            }
+        };
+        const feature = urbanismePlotFeaturesSelector(state);
+        expect(feature).toBeTruthy();
+        expect(feature.length).toBe(1);
+    });
+    it('test urbanismePlotFeatureCrsSelector', () => {
+        const state = {
+            urbanisme: {
+                config: {prop: "A"},
+                highlightedFeature: [{ prop: "test"}],
+                featureCrs: 'test'
+            }
+        };
+        const crs = urbanismePlotFeatureCrsSelector(state);
+        expect(crs).toBeTruthy();
+        expect(crs).toBe('test');
     });
 });

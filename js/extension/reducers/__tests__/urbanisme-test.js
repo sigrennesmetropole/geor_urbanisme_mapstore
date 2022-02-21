@@ -7,7 +7,14 @@
  */
 import expect from 'expect';
 
-import {setConfiguration, toggleUrbanismeTool, loading, toggleGFIPanel, setAttributes } from '../../actions/urbanisme';
+import {
+    setConfiguration,
+    toggleUrbanismeTool,
+    loading,
+    toggleGFIPanel,
+    setAttributes,
+    featureInfoClick, highlightFeature, resetFeatureHighlight
+} from '../../actions/urbanisme';
 import urbanismeState from '../urbanisme';
 import {URBANISME_TOOLS} from "@js/extension/constants";
 
@@ -35,5 +42,23 @@ describe('Urbanisme reducers', () => {
         const attributes = {name: "URBANISME"};
         const state = urbanismeState({}, setAttributes(attributes));
         expect(state.attributes).toEqual(attributes);
+    });
+    it('URBANISME_FEATURE_INFO_CLICK', () => {
+        const state = urbanismeState({}, featureInfoClick( {}, 'test', [], {}, 'test'));
+        expect(state.clickPoint).toEqual({});
+        expect(state.clickLayer).toBe('test');
+        expect(state.filterNameList).toEqual([]);
+        expect(state.overrideParams).toEqual({});
+        expect(state.itemId).toEqual('test');
+    });
+    it('URBANISME_HIGHLIGHT_FEATURE', () => {
+        const state = urbanismeState({}, highlightFeature( {}, {}, 'test'));
+        expect(state.highlightedFeature).toEqual({});
+        expect(state.featureCrs).toBe('test');
+    });
+    it('URBANISME_RESET_FEATURE_HIGHLIGHT', () => {
+        const state = urbanismeState({}, resetFeatureHighlight());
+        expect(state.highlightedFeature).toBe(null);
+        expect(state.featureCrs).toBe(null);
     });
 });

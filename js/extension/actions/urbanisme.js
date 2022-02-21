@@ -5,16 +5,19 @@
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import { printError } from "@mapstore/actions/print";
+import {printError} from "@mapstore/actions/print";
 
-import { getUrbanismePrintSpec, retryDownload } from "../utils/UrbanismeUtils";
-import { printPDF } from "@js/extension/api";
+import {getUrbanismePrintSpec, retryDownload} from "../utils/UrbanismeUtils";
+import {printPDF} from "@js/extension/api";
 
 export * from "./setUp";
 export const TOGGLE_TOOL = "URBANISME:TOGGLE_TOOL";
 export const TOGGLE_VIEWER_PANEL = "URBANISME:TOGGLE_VIEWER_PANEL";
 export const SET_URBANISME_DATA = "URBANISME:SET_URBANISME_DATA";
 export const LOADING = "URBANISME:LOADING";
+export const URBANISME_FEATURE_INFO_CLICK = 'URBANISME:FEATURE_INFO_CLICK';
+export const URBANISME_HIGHLIGHT_FEATURE = 'URBANISME:HIGHLIGHT_FEATURE';
+export const URBANISME_RESET_FEATURE_HIGHLIGHT = 'URBANISME:RESET_FEATURE_HIGHLIGHT';
 
 /**
  * Sets the status of loading of a resource called "name" and "value" as the information status
@@ -77,8 +80,8 @@ export const toggleGFIPanel = enabled => {
 export const printSubmit = attributes => {
     return (dispatch, getState) => {
         const state = getState() || {};
-        const { outputFilename, layout = "A4 portrait", ...dataAttributes } =
-      attributes || {};
+        const {outputFilename, layout = "A4 portrait", ...dataAttributes} =
+        attributes || {};
         const {
             layers,
             scaleForZoom,
@@ -110,3 +113,38 @@ export const printSubmit = attributes => {
             });
     };
 };
+
+/**
+ * Carries data needed for Get Feature Info request
+ * @param {object} point point clicked in this shape {latlng: {lat:1, lng:2}, pixel:{x:33 y:33}, modifiers:{} }
+ * @param {string} layer the name of the layer without workspace
+ * @param {object[]} [filterNameList=[]] list of layers to perform the GFI request
+ * @param {object} [overrideParams={}] a map based on name as key and object as value for overriding request params
+ * @param {string} [itemId=null] id of the item needed for filtering results
+ */
+export function featureInfoClick(point, layer, filterNameList = [], overrideParams = {}, itemId = null) {
+    return {
+        type: URBANISME_FEATURE_INFO_CLICK,
+        point,
+        layer,
+        filterNameList,
+        overrideParams,
+        itemId
+    };
+}
+
+
+export function highlightFeature(point, feature, featureCrs) {
+    return {
+        type: URBANISME_HIGHLIGHT_FEATURE,
+        point,
+        feature,
+        featureCrs
+    };
+}
+
+export function resetFeatureHighlight() {
+    return {
+        type: URBANISME_RESET_FEATURE_HIGHLIGHT
+    };
+}

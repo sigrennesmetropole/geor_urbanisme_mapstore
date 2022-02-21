@@ -7,71 +7,87 @@
  */
 
 import * as Rx from "rxjs";
-import { get, isEmpty } from "lodash";
+import {get, isEmpty, omit} from "lodash";
+import uuid from 'uuid';
 
+import {SET_CONTROL_PROPERTY, TOGGLE_CONTROL, toggleControl} from "@mapstore/actions/controls";
+import {ANNOTATIONS} from "@mapstore/utils/AnnotationsUtils";
+import {error} from "@mapstore/actions/notifications";
+import {CLICK_ON_MAP} from "@mapstore/actions/map";
+import {removeAdditionalLayer, updateAdditionalLayer} from '@mapstore/actions/additionallayers';
 import {
-    TOGGLE_CONTROL,
-    toggleControl,
-    SET_CONTROL_PROPERTY
-} from "@mapstore/actions/controls";
-import { ANNOTATIONS } from "@mapstore/utils/AnnotationsUtils";
-import { error } from "@mapstore/actions/notifications";
-import { CLICK_ON_MAP } from "@mapstore/actions/map";
-import { addLayer, removeLayer } from "@mapstore/actions/layers";
-import {
-    toggleMapInfoState,
-    toggleHighlightFeature,
-    purgeMapInfoResults,
-    featureInfoClick,
+    errorFeatureInfo,
+    exceptionsFeatureInfo,
+    getVectorInfo,
     LOAD_FEATURE_INFO,
-    hideMapinfoMarker
+    loadFeatureInfo,
+    newMapInfoRequest,
+    noQueryableLayers,
+    purgeMapInfoResults, SET_MAP_TRIGGER, setMapTrigger,
+    TOGGLE_MAPINFO_STATE,
+    toggleMapInfoState
 } from "@mapstore/actions/mapInfo";
 
-import { localConfigSelector } from '../../../MapStore2/web/client/selectors/localConfig';
+import {localConfigSelector} from '@mapstore/selectors/localConfig';
 import proj4 from 'proj4';
 
-import {
-    createControlEnabledSelector,
-    measureSelector
-} from "@mapstore/selectors/controls";
-import { wrapStartStop } from "@mapstore/observables/epics";
+import {createControlEnabledSelector, measureSelector} from "@mapstore/selectors/controls";
+import {wrapStartStop} from "@mapstore/observables/epics";
 
 import {
-    SET_UP,
-    setConfiguration,
+    featureInfoClick,
+    highlightFeature,
     loading,
+    resetFeatureHighlight,
+    SET_UP,
     setAttributes,
-    toggleUrbanismeTool,
-    toggleGFIPanel,
+    setConfiguration,
+    TOGGLE_TOOL,
     TOGGLE_VIEWER_PANEL,
-    TOGGLE_TOOL
+    toggleGFIPanel,
+    toggleUrbanismeTool,
+    URBANISME_FEATURE_INFO_CLICK,
+    URBANISME_HIGHLIGHT_FEATURE,
+    URBANISME_RESET_FEATURE_HIGHLIGHT
 } from "../actions/urbanisme";
 import {
-    configSelector,
-    configLoadSelector,
-    urbanismeLayerSelector,
-    urbanimseControlSelector,
     activeToolSelector,
+    clickPointSelector,
+    configLoadSelector,
+    configSelector,
+    identifyOptionsSelector,
+    itemIdSelector,
+    lpGFIPanelSelector,
+    overrideParamsSelector,
     printingSelector,
-    lpGFIPanelSelector
+    urbanimseControlSelector,
+    urbanismeLayerSelector
 } from "../selectors/urbanisme";
 import {
-    getConfiguration,
+    getAdsAutorisation,
+    getAdsSecteurInstruction,
     getCommune,
+    getConfiguration,
     getFIC,
     getParcelle,
-    getRenseignUrba,
-    getRenseignUrbaInfos,
     getQuartier,
-    getAdsSecteurInstruction,
-    getAdsAutorisation
+    getRenseignUrba,
+    getRenseignUrbaInfos
 } from "../api";
 import {
     CONTROL_NAME,
+    DEFAULT_URBANISME_LAYER,
+    URBANISME_OWNER,
     URBANISME_RASTER_LAYER_ID,
     URBANISME_TOOLS,
-    DEFAULT_URBANISME_LAYER
+    URBANISME_VECTOR_LAYER_ID
 } from "../constants";
+import {localizedLayerStylesEnvSelector} from "@mapstore/selectors/localizedLayerStyles";
+import {buildIdentifyRequest, clickedPointToGeoJson, filterRequestParams} from "@mapstore/utils/MapInfoUtils";
+import {getFeatureInfo} from "@mapstore/api/identify";
+import {reprojectGeoJson} from "@mapstore/utils/CoordinatesUtils";
+import {highlightStyleSelector, mapInfoDisabledSelector, mapTriggerSelector} from "@mapstore/selectors/mapInfo";
+import {styleFeatures} from "@js/extension/utils/UrbanismeUtils";
 
 /**
  * Ensures that config for the urbanisme tool is fetched and loaded
@@ -86,7 +102,7 @@ export const setUpPluginEpic = (action$, store) =>
         // adds projections from localConfig.json
         // The extension do not see the state proj4 of MapStore (can not reproject in custom CRS as mapstore does)
         // so they have to be registered again in the extension.
-        const { projectionDefs = [] } = localConfigSelector(store.getState()) ?? {};
+        const {projectionDefs = []} = localConfigSelector(store.getState()) ?? {};
         projectionDefs.forEach((proj) => {
             proj4.defs(proj.code, proj.def);
         });
@@ -100,7 +116,10 @@ export const setUpPluginEpic = (action$, store) =>
                     loading(false, 'configLoading'),
                     e => {
                         console.log(e); // eslint-disable-line no-console
-                        return Rx.Observable.of(error({ title: "Error", message: "Unable to setup urbanisme app" }), loading(false, 'configLoading'));
+                        return Rx.Observable.of(error({
+                            title: "Error",
+                            message: "Unable to setup urbanisme app"
+                        }), loading(false, 'configLoading'));
 
                     }
                 )
@@ -117,33 +136,50 @@ export const setUpPluginEpic = (action$, store) =>
 export const toggleLandPlanningEpic = (action$, store) =>
     action$
         .ofType(TOGGLE_CONTROL)
-        .filter(({ control }) => control === CONTROL_NAME)
+        .filter(({control}) => control === CONTROL_NAME)
         .switchMap(() => {
             const state = store.getState();
-            const { cadastreWMSURL: url, layer: name = DEFAULT_URBANISME_LAYER } = configSelector(state) || {};
+            const {cadastreWMSURL: url, layer: name = DEFAULT_URBANISME_LAYER} = configSelector(state) || {};
             const enabled = urbanimseControlSelector(state);
             const mapInfoEnabled = get(state, "mapInfo.enabled");
             const isMeasureEnabled = measureSelector(state);
+            const mapHoverTrigger = mapTriggerSelector(state);
             if (enabled) {
                 return Rx.Observable.from([
-                    addLayer({
-                        id: URBANISME_RASTER_LAYER_ID,
-                        type: "wms",
-                        name,
-                        url,
-                        visibility: true,
-                        search: {}
-                    }),
-                    toggleHighlightFeature(true)
+                    updateAdditionalLayer(
+                        URBANISME_RASTER_LAYER_ID,
+                        URBANISME_OWNER,
+                        'overlay',
+                        {
+                            id: URBANISME_RASTER_LAYER_ID,
+                            type: "wms",
+                            name,
+                            url,
+                            visibility: true,
+                            search: {}
+                        }, true),
+                    updateAdditionalLayer(
+                        URBANISME_VECTOR_LAYER_ID,
+                        URBANISME_OWNER,
+                        'overlay',
+                        {
+                            id: URBANISME_VECTOR_LAYER_ID,
+                            features: [],
+                            type: "vector",
+                            name: "selectedPlot",
+                            visibility: true
+                        })
                 ]).concat([
                     ...(mapInfoEnabled ? [toggleMapInfoState()] : []),
-                    ...(isMeasureEnabled ? [toggleControl("measure")] : [])
+                    ...(isMeasureEnabled ? [toggleControl("measure")] : []),
+                    ...(mapHoverTrigger === 'hover' ? [setMapTrigger("click")] : [])
                 ]);
             }
             const layer = urbanismeLayerSelector(state);
             return !isEmpty(layer)
                 ? Rx.Observable.from([
-                    removeLayer(URBANISME_RASTER_LAYER_ID),
+                    removeAdditionalLayer({id: URBANISME_RASTER_LAYER_ID, owner: URBANISME_OWNER}),
+                    removeAdditionalLayer({id: URBANISME_VECTOR_LAYER_ID, owner: URBANISME_OWNER}),
                     purgeMapInfoResults()
                 ]).concat(!mapInfoEnabled ? [toggleMapInfoState()] : [])
                 : Rx.Observable.empty();
@@ -155,29 +191,26 @@ export const toggleLandPlanningEpic = (action$, store) =>
  * @param {observable} action$ manages `CLICK_ON_MAP`
  * @return {observable}
  */
-export const clickOnMapEventEpic = (action$, { getState }) =>
+export const clickOnMapEventEpic = (action$, {getState}) =>
     action$
         .ofType(CLICK_ON_MAP)
         .filter(() => !isEmpty(urbanismeLayerSelector(getState())))
-        .switchMap(({ point, layer }) => {
+        .switchMap(({point, layer}) => {
             const state = getState();
             const isPrinting = printingSelector(state);
             const activeTool = activeToolSelector(state);
             const urbanismeEnabled = urbanimseControlSelector(state);
-            const mapInfoEnabled = get(state, "mapInfo.enabled", false);
+            const mapInfoEnabled = !mapInfoDisabledSelector(state);
             if (mapInfoEnabled) {
                 return urbanismeEnabled
                     ? Rx.Observable.of(toggleControl(CONTROL_NAME))
                     : Rx.Observable.empty();
             }
             return !isEmpty(activeTool) && !isPrinting
-                ? Rx.Observable.concat(
-                    Rx.Observable.of(toggleHighlightFeature(true)),
-                    Rx.Observable.of(
-                        featureInfoClick(point, layer),
-                        setAttributes(null),
-                        loading(true, "dataLoading")
-                    )
+                ? Rx.Observable.of(
+                    featureInfoClick(point, layer),
+                    setAttributes(null),
+                    loading(true, "dataLoading")
                 )
                 : Rx.Observable.empty();
         });
@@ -188,20 +221,20 @@ export const clickOnMapEventEpic = (action$, { getState }) =>
  * @param {observable} action$ manages `TOGGLE_CONTROL`
  * @return {observable}
  */
-export const cleanUpUrbanismeEpic = (action$, { getState }) =>
+export const cleanUpUrbanismeEpic = (action$, {getState}) =>
     action$
         .ofType(TOGGLE_CONTROL)
-        .filter(({ control }) => {
+        .filter(({control}) => {
             const isUrbanismeEnabled = urbanimseControlSelector(getState());
             const isAnnotationsEnabled = createControlEnabledSelector(ANNOTATIONS)(
                 getState()
             );
             return (
                 (control === CONTROL_NAME && !isUrbanismeEnabled) ||
-        (control === ANNOTATIONS && isAnnotationsEnabled && isUrbanismeEnabled)
+                (control === ANNOTATIONS && isAnnotationsEnabled && isUrbanismeEnabled)
             );
         })
-        .switchMap(({ control }) => {
+        .switchMap(({control}) => {
             const state = getState();
             const activeTool = activeToolSelector(state);
             const gfiPanelEnabled = lpGFIPanelSelector(state);
@@ -211,7 +244,7 @@ export const cleanUpUrbanismeEpic = (action$, { getState }) =>
                     ...(!isEmpty(activeTool) ? [toggleUrbanismeTool(null)] : []),
                     ...(gfiPanelEnabled ? [toggleGFIPanel(false)] : []),
                     setAttributes(null),
-                    toggleHighlightFeature(false)
+                    resetFeatureHighlight()
                 ]);
             } else if (control === ANNOTATIONS) {
                 observable$ = Rx.Observable.of(toggleControl(CONTROL_NAME));
@@ -225,12 +258,47 @@ export const cleanUpUrbanismeEpic = (action$, { getState }) =>
  * @param {observable} action$ manages `SET_CONTROL_PROPERTY`
  * @return {observable}
  */
-export const closeOnMeasureEnabledEpic = (action$, { getState }) =>
+export const closeOnMeasureEnabledEpic = (action$, {getState}) =>
     action$
         .ofType(SET_CONTROL_PROPERTY)
         .filter(
-            ({ control }) => control === "measure" && measureSelector(getState())
+            ({control}) => control === "measure" && measureSelector(getState())
         )
+        .switchMap(() => {
+            const urbanismeEnabled = urbanimseControlSelector(getState());
+            return urbanismeEnabled
+                ? Rx.Observable.of(toggleControl(CONTROL_NAME))
+                : Rx.Observable.empty();
+        });
+
+/**
+ * Ensures that the urbanisme plugin is closed when Identify tool is activated
+ * @memberof epics.urbanisme
+ * @param {observable} action$ manages `SET_CONTROL_PROPERTY`
+ * @return {observable}
+ */
+export const closeOnIdentifyEnabledEpic = (action$, {getState}) =>
+    action$
+        .ofType(TOGGLE_MAPINFO_STATE)
+        .filter(() => !mapInfoDisabledSelector(getState()))
+        .switchMap(() => {
+            const urbanismeEnabled = urbanimseControlSelector(getState());
+            return urbanismeEnabled
+                ? Rx.Observable.of(toggleControl(CONTROL_NAME))
+                : Rx.Observable.empty();
+        });
+
+/**
+ * Ensures that the urbanisme plugin is closed when Map info trigger
+ * is changed to "hover"
+ * @memberof epics.urbanisme
+ * @param {observable} action$ manages `SET_CONTROL_PROPERTY`
+ * @return {observable}
+ */
+export const closeOnMapHoverEnabledEpic = (action$, {getState}) =>
+    action$
+        .ofType(SET_MAP_TRIGGER)
+        .filter(() => mapTriggerSelector(getState()) === 'hover')
         .switchMap(() => {
             const urbanismeEnabled = urbanimseControlSelector(getState());
             return urbanismeEnabled
@@ -247,9 +315,9 @@ export const closeOnMeasureEnabledEpic = (action$, { getState }) =>
 export const onClosePanelEpic = action$ =>
     action$
         .ofType(TOGGLE_VIEWER_PANEL)
-        .filter(({ enabled }) => !enabled)
+        .filter(({enabled}) => !enabled)
         .switchMap(() =>
-            Rx.Observable.of(hideMapinfoMarker(), toggleHighlightFeature(false))
+            Rx.Observable.of(resetFeatureHighlight())
         );
 
 /**
@@ -263,8 +331,7 @@ export const onToogleToolEpic = action$ =>
         .ofType(TOGGLE_TOOL)
         .switchMap(() =>
             Rx.Observable.from([
-                hideMapinfoMarker(),
-                toggleHighlightFeature(false),
+                resetFeatureHighlight(),
                 setAttributes(null),
                 toggleGFIPanel(false)
             ])
@@ -275,22 +342,21 @@ export const onToogleToolEpic = action$ =>
  * @param {observable} action$ manages `LOAD_FEATURE_INFO`
  * @return {observable}
  */
-export const getFeatureInfoEpic = (action$, { getState }) =>
+export const getFeatureInfoEpic = (action$, {getState}) =>
     action$
         .ofType(LOAD_FEATURE_INFO)
         .filter(
-            ({ layer }) =>
+            ({layer}) =>
                 layer.id === URBANISME_RASTER_LAYER_ID &&
-        !printingSelector(getState()) &&
-        !isEmpty(activeToolSelector(getState()))
+                !printingSelector(getState()) &&
+                !isEmpty(activeToolSelector(getState()))
         )
-        .switchMap(({ layerMetadata }) => {
+        .switchMap(({layerMetadata}) => {
             const {idParcelleKey} = configSelector(getState()) ?? {};
             const parcelleId = layerMetadata.features?.[0]?.properties?.[idParcelleKey ?? "id_parc"] || "";
             const activeTool = activeToolSelector(getState());
             if (isEmpty(parcelleId)) {
                 return Rx.Observable.of(
-                    hideMapinfoMarker(),
                     loading(false, "dataLoading"),
                     setAttributes(null)
                 );
@@ -309,8 +375,8 @@ export const getFeatureInfoEpic = (action$, { getState }) =>
                     getFIC(parcelleId, 1),
                     getRenseignUrbaInfos(codeCommune)
                 ).switchMap(
-                    ([commune, parcelle, lisbelle, propPrio, proprioSurf, dates]) =>
-                        Rx.Observable.of(
+                    ([commune, parcelle, lisbelle, propPrio, proprioSurf, dates]) => {
+                        return Rx.Observable.of(
                             setAttributes({
                                 ...commune,
                                 ...parcelle,
@@ -319,35 +385,187 @@ export const getFeatureInfoEpic = (action$, { getState }) =>
                                 ...proprioSurf,
                                 ...dates
                             })
-                        )
+                        );
+                    }
                 );
             } else if (activeTool === URBANISME_TOOLS.ADS) {
                 observable$ = Rx.Observable.forkJoin(
                     getAdsSecteurInstruction(parcelleId),
                     getAdsAutorisation(parcelleId),
                     getQuartier(parcelleId)
-                ).switchMap(([adsSecteurInstruction, adsAutorisation, quartier]) =>
-                    Rx.Observable.of(
+                ).switchMap(([adsSecteurInstruction, adsAutorisation, quartier]) => {
+                    return Rx.Observable.of(
                         setAttributes({
                             ...adsSecteurInstruction,
                             ...adsAutorisation,
                             ...quartier
                         })
-                    )
+                    );
+                }
                 );
             }
-            return observable$.startWith(toggleGFIPanel(true)).let(
+            return observable$.startWith(
+                toggleGFIPanel(true)
+            ).let(
                 wrapStartStop(
                     loading(true, "dataLoading"),
                     loading(false, "dataLoading"),
                     e => {
                         console.log(e); // eslint-disable-line no-console
                         return Rx.Observable.of(
-                            error({ title: "Error", message: "Unable to fetch data" }),
+                            error({title: "Error", message: "Unable to fetch data"}),
                             loading(false, "dataLoading")
                         );
                     }
                 )
+            );
+        });
+
+/**
+ * Ensures that loaded feature is highlighted
+ * @memberof epics.urbanisme
+ * @param {observable} action$ manages `LOAD_FEATURE_INFO`
+ * @return {observable}
+ */
+export const highlightFeatureEpic = (action$, {getState}) =>
+    action$
+        .ofType(LOAD_FEATURE_INFO)
+        .filter(
+            ({layer}) =>
+                layer.id === URBANISME_RASTER_LAYER_ID &&
+                !printingSelector(getState()) &&
+                !isEmpty(activeToolSelector(getState()))
+        )
+        .switchMap(({layerMetadata}) => {
+            const {idParcelleKey} = configSelector(getState()) ?? {};
+            const clickedPoint = clickPointSelector(getState());
+            const parcelleId = layerMetadata.features?.[0]?.properties?.[idParcelleKey ?? "id_parc"] || "";
+            if (isEmpty(parcelleId)) {
+                return Rx.Observable.of(
+                    resetFeatureHighlight(),
+                );
+            }
+            return Rx.Observable.of(
+                highlightFeature(clickedPoint, [layerMetadata?.features[0]], layerMetadata.featuresCrs)
+            );
+        });
+
+/**
+ * Triggers data load on FEATURE_INFO_CLICK events
+ */
+export const getUrbanismeFeatureInfoOnFeatureInfoClick = (action$, {
+    getState = () => {
+    }
+}) =>
+    action$.ofType(URBANISME_FEATURE_INFO_CLICK)
+        .switchMap(({point, filterNameList = [], overrideParams = {}}) => {
+            // Reverse - To query layer in same order as in TOC
+            let queryableLayers = [urbanismeLayerSelector(getState())].filter(e => e);
+            if (queryableLayers.length === 0) {
+                return Rx.Observable.of(purgeMapInfoResults(), noQueryableLayers());
+            }
+
+            // TODO: make it in the application getState()
+            const excludeParams = ["SLD_BODY"];
+            const includeOptions = [
+                "buffer",
+                "cql_filter",
+                "filter",
+                "propertyName"
+            ];
+            const out$ = Rx.Observable.from((queryableLayers.filter(l => {
+                // filtering a subset of layers
+                return filterNameList.length ? (filterNameList.filter(name => name.indexOf(l.name) !== -1).length > 0) : true;
+            })))
+                .mergeMap(layer => {
+                    let env = localizedLayerStylesEnvSelector(getState());
+                    let {
+                        url,
+                        request,
+                        metadata
+                    } = buildIdentifyRequest(layer, {...identifyOptionsSelector(getState()), env, point});
+                    // request override
+                    if (itemIdSelector(getState()) && overrideParamsSelector(getState())) {
+                        request = {...request, ...overrideParamsSelector(getState())[layer.name]};
+                    }
+                    if (overrideParams[layer.name]) {
+                        request = {...request, ...overrideParams[layer.name]};
+                    }
+                    if (url) {
+                        const basePath = url;
+                        const requestParams = request;
+                        const lMetaData = metadata;
+                        const appParams = filterRequestParams(layer, includeOptions, excludeParams);
+                        const itemId = itemIdSelector(getState());
+                        const reqId = uuid.v1();
+                        const param = {...appParams, ...requestParams};
+                        return getFeatureInfo(basePath, param, layer, {attachJSON: true, itemId})
+                            .map((response) =>
+                                response.data.exceptions
+                                    ? exceptionsFeatureInfo(reqId, response.data.exceptions, requestParams, lMetaData)
+                                    : loadFeatureInfo(reqId, response.data, requestParams, {
+                                        ...lMetaData,
+                                        features: response.features,
+                                        featuresCrs: response.featuresCrs
+                                    }, layer)
+                            )
+                            .catch((e) => Rx.Observable.of(errorFeatureInfo(reqId, e.data || e.statusText || e.status, requestParams, lMetaData)))
+                            .startWith(newMapInfoRequest(reqId, param));
+                    }
+                    return Rx.Observable.of(getVectorInfo(layer, request, metadata, queryableLayers));
+                });
+            // NOTE: multiSelection is inside the event
+            // TODO: move this flag in the application state
+            if (point && point.modifiers && point.modifiers.ctrl === true && point.multiSelection) {
+                return out$;
+            }
+            return out$.startWith(purgeMapInfoResults());
+        });
+
+/**
+ * Updates additional layer with vector data to show highlighted feature and click marker
+ */
+export const updateAdditionalLayerEpic = (action$, {
+    getState = () => {
+    }
+}) =>
+    action$.ofType(URBANISME_HIGHLIGHT_FEATURE, URBANISME_RESET_FEATURE_HIGHLIGHT)
+        .switchMap(({ point = {}, feature, featureCrs, type }) => {
+            const state = getState();
+            const enabled = urbanimseControlSelector(state);
+            if (enabled && type === URBANISME_HIGHLIGHT_FEATURE) {
+                const styledFeatures = styleFeatures(feature, omit(highlightStyleSelector(state), ["radius"]));
+                const features = styledFeatures && featureCrs ? styledFeatures.map( f => reprojectGeoJson(
+                    f,
+                    featureCrs,
+                )) : styledFeatures;
+                const markerFeature = clickedPointToGeoJson(point.latlng);
+                return Rx.Observable.of(
+                    updateAdditionalLayer(
+                        URBANISME_VECTOR_LAYER_ID,
+                        URBANISME_OWNER,
+                        'overlay',
+                        {
+                            id: URBANISME_VECTOR_LAYER_ID,
+                            features: features.concat(markerFeature),
+                            type: "vector",
+                            name: "selectedPlot",
+                            visibility: true
+                        })
+                );
+            }
+            return Rx.Observable.of(
+                updateAdditionalLayer(
+                    URBANISME_VECTOR_LAYER_ID,
+                    URBANISME_OWNER,
+                    'overlay',
+                    {
+                        id: URBANISME_VECTOR_LAYER_ID,
+                        features: [],
+                        type: "vector",
+                        name: "selectedPlot",
+                        visibility: true
+                    })
             );
         });
 
@@ -358,6 +576,11 @@ export default {
     getFeatureInfoEpic,
     onClosePanelEpic,
     cleanUpUrbanismeEpic,
+    onToogleToolEpic,
+    getUrbanismeFeatureInfoOnFeatureInfoClick,
+    highlightFeatureEpic,
+    updateAdditionalLayerEpic,
     closeOnMeasureEnabledEpic,
-    onToogleToolEpic
+    closeOnMapHoverEnabledEpic,
+    closeOnIdentifyEnabledEpic
 };
