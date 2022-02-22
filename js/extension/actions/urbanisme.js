@@ -35,7 +35,7 @@ export const loading = (value, name) => ({
 /**
  * Sets the activeTool for urbanisme toolbar
  * @memberof actions.toggleUrbanismeTool
- * @param {string} tool name to active
+ * @param {string|null} tool name to active
  * @return {object} with type `TOGGLE_TOOL`
  */
 export const toggleUrbanismeTool = tool => {
