@@ -25,7 +25,8 @@ import {
     noQueryableLayers,
     purgeMapInfoResults, SET_MAP_TRIGGER, setMapTrigger,
     TOGGLE_MAPINFO_STATE,
-    toggleMapInfoState
+    toggleMapInfoState,
+    hideMapinfoMarker
 } from "@mapstore/actions/mapInfo";
 
 import {localConfigSelector} from '@mapstore/selectors/localConfig';
@@ -86,7 +87,7 @@ import {localizedLayerStylesEnvSelector} from "@mapstore/selectors/localizedLaye
 import {buildIdentifyRequest, clickedPointToGeoJson, filterRequestParams} from "@mapstore/utils/MapInfoUtils";
 import {getFeatureInfo} from "@mapstore/api/identify";
 import {reprojectGeoJson} from "@mapstore/utils/CoordinatesUtils";
-import {highlightStyleSelector, mapInfoDisabledSelector, mapTriggerSelector} from "@mapstore/selectors/mapInfo";
+import {showMarkerSelector, highlightStyleSelector, mapInfoDisabledSelector, mapTriggerSelector} from "@mapstore/selectors/mapInfo";
 import {styleFeatures} from "@js/extension/utils/UrbanismeUtils";
 
 /**
