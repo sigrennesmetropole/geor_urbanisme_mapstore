@@ -17,7 +17,7 @@ import {
     toggleLandPlanningEpic,
     cleanUpUrbanismeEpic,
     clickOnMapEventEpic,
-    closeOnMeasureEnabledEpic,
+    deactivateOnMeasureEnabledEpic,
     getFeatureInfoEpic,
     onClosePanelEpic,
     onToogleToolEpic,
@@ -105,10 +105,10 @@ describe('Urbanisme EPICS', () => {
         };
         testEpic(
             toggleLandPlanningEpic,
-            4,
+            5,
             toggleControl('urbanisme', null),
             actions => {
-                expect(actions.length).toBe(4);
+                expect(actions.length).toBe(5);
                 actions.map(action=> {
                     switch (action.type) {
                     case UPDATE_ADDITIONAL_LAYER:
@@ -116,6 +116,7 @@ describe('Urbanisme EPICS', () => {
                         expect([URBANISME_RASTER_LAYER_ID, URBANISME_VECTOR_LAYER_ID].includes(action.options.id)).toBeTruthy();
                         break;
                     case TOGGLE_MAPINFO_STATE:
+                    case PURGE_MAPINFO_RESULTS:
                         break;
                     case TOGGLE_CONTROL:
                         expect(action.control).toBe('measure');
@@ -250,14 +251,20 @@ describe('Urbanisme EPICS', () => {
     it('closeOnMeasureEnabledEpic close when urbanisme plugin when measurement is opened', (done) => {
         const state = { controls: { measure: { enabled: true}, urbanisme: { enabled: true}}};
         testEpic(
-            closeOnMeasureEnabledEpic,
-            1,
+            deactivateOnMeasureEnabledEpic,
+            3,
             setControlProperty("measure", "enabled", true),
             actions => {
-                expect(actions.length).toBe(1);
+                expect(actions.length).toBe(3);
                 actions.map(action=>{
                     switch (action.type) {
-                    case TOGGLE_CONTROL:
+                    case TOGGLE_TOOL:
+                        expect(action.activeTool).toBe(null);
+                        break;
+                    case TOGGLE_VIEWER_PANEL:
+                        expect(action.enabled).toBe(false);
+                        break;
+                    case PURGE_MAPINFO_RESULTS:
                         break;
                     default:
                         expect(true).toBe(false);
@@ -428,12 +435,16 @@ describe('Urbanisme EPICS', () => {
     });
 
     it('onToogleToolEpic clean up activities of previous tool', (done) => {
+        const state = {
+            controls: { measure: { enabled: true}, urbanisme: { enabled: true}},
+            urbanisme: { activeTool: "ADS"}
+        };
         testEpic(
             onToogleToolEpic,
-            3,
+            4,
             toggleUrbanismeTool('NRU'),
             actions => {
-                expect(actions.length).toBe(3);
+                expect(actions.length).toBe(4);
                 actions.map(action=>{
                     switch (action.type) {
                     case URBANISME_RESET_FEATURE_HIGHLIGHT:
@@ -444,12 +455,15 @@ describe('Urbanisme EPICS', () => {
                     case TOGGLE_VIEWER_PANEL:
                         expect(action.enabled).toBe(false);
                         break;
+                    case TOGGLE_CONTROL:
+                        expect(action.control).toBe("measure");
+                        break;
                     default:
                         expect(true).toBe(false);
                     }
                 });
                 done();
-            }, {});
+            }, state);
     });
 
     it('updateAdditionalLayerEpic on feature highlight test', (done) => {

@@ -203,7 +203,7 @@ export const clickOnMapEventEpic = (action$, {getState}) =>
             const mapInfoEnabled = !mapInfoDisabledSelector(state);
             if (mapInfoEnabled) {
                 return urbanismeEnabled
-                    ? Rx.Observable.of(toggleControl(CONTROL_NAME))
+                    ? Rx.Observable.of(toggleUrbanismeTool(null))
                     : Rx.Observable.empty();
             }
             return !isEmpty(activeTool) && !isPrinting
@@ -253,12 +253,12 @@ export const cleanUpUrbanismeEpic = (action$, {getState}) =>
         });
 
 /**
- * Ensures that when the urbanisme plugin is closed when measurement tool is activated
+ * Ensures that the urbanisme plugin is deactivated when measurement tool is activated
  * @memberof epics.urbanisme
  * @param {observable} action$ manages `SET_CONTROL_PROPERTY`
  * @return {observable}
  */
-export const closeOnMeasureEnabledEpic = (action$, {getState}) =>
+export const deactivateOnMeasureEnabledEpic = (action$, {getState}) =>
     action$
         .ofType(SET_CONTROL_PROPERTY)
         .filter(
@@ -267,24 +267,32 @@ export const closeOnMeasureEnabledEpic = (action$, {getState}) =>
         .switchMap(() => {
             const urbanismeEnabled = urbanimseControlSelector(getState());
             return urbanismeEnabled
-                ? Rx.Observable.of(toggleControl(CONTROL_NAME))
+                ? Rx.Observable.from([
+                    toggleGFIPanel(false),
+                    toggleUrbanismeTool(null),
+                    purgeMapInfoResults()
+                ])
                 : Rx.Observable.empty();
         });
 
 /**
- * Ensures that the urbanisme plugin is closed when Identify tool is activated
+ * Ensures that the urbanisme plugin active tool is getting deactivated when Identify tool is activated
  * @memberof epics.urbanisme
- * @param {observable} action$ manages `SET_CONTROL_PROPERTY`
+ * @param {observable} action$ manages `TOGGLE_MAPINFO_STATE`
  * @return {observable}
  */
-export const closeOnIdentifyEnabledEpic = (action$, {getState}) =>
+export const deactivateOnIdentifyEnabledEpic = (action$, {getState}) =>
     action$
         .ofType(TOGGLE_MAPINFO_STATE)
         .filter(() => !mapInfoDisabledSelector(getState()))
         .switchMap(() => {
             const urbanismeEnabled = urbanimseControlSelector(getState());
             return urbanismeEnabled
-                ? Rx.Observable.of(toggleControl(CONTROL_NAME))
+                ? Rx.Observable.from([
+                    toggleGFIPanel(false),
+                    toggleUrbanismeTool(null),
+                    purgeMapInfoResults()
+                ])
                 : Rx.Observable.empty();
         });
 
@@ -292,17 +300,21 @@ export const closeOnIdentifyEnabledEpic = (action$, {getState}) =>
  * Ensures that the urbanisme plugin is closed when Map info trigger
  * is changed to "hover"
  * @memberof epics.urbanisme
- * @param {observable} action$ manages `SET_CONTROL_PROPERTY`
+ * @param {observable} action$ manages `SET_MAP_TRIGGER`
  * @return {observable}
  */
-export const closeOnMapHoverEnabledEpic = (action$, {getState}) =>
+export const deactivateOnMapHoverEnabledEpic = (action$, {getState}) =>
     action$
         .ofType(SET_MAP_TRIGGER)
         .filter(() => mapTriggerSelector(getState()) === 'hover')
         .switchMap(() => {
             const urbanismeEnabled = urbanimseControlSelector(getState());
             return urbanismeEnabled
-                ? Rx.Observable.of(toggleControl(CONTROL_NAME))
+                ? Rx.Observable.from([
+                    toggleGFIPanel(false),
+                    toggleUrbanismeTool(null),
+                    purgeMapInfoResults()
+                ])
                 : Rx.Observable.empty();
         });
 
@@ -326,15 +338,29 @@ export const onClosePanelEpic = action$ =>
  * @param {observable} action$ manages `TOGGLE_TOOL`
  * @return {observable}
  */
-export const onToogleToolEpic = action$ =>
+export const onToogleToolEpic = (action$, {getState}) =>
     action$
         .ofType(TOGGLE_TOOL)
-        .switchMap(() =>
-            Rx.Observable.from([
+        .filter(() => {
+            const state = getState();
+            return activeToolSelector(state);
+        })
+        .switchMap(() => {
+            const state = getState();
+            const mapInfoEnabled = !mapInfoDisabledSelector(state);
+            const infoMarkerIsShown = showMarkerSelector(state);
+            const isMeasureEnabled = measureSelector(state);
+            const mapHoverTrigger = mapTriggerSelector(state);
+            return Rx.Observable.from([
                 resetFeatureHighlight(),
                 setAttributes(null),
-                toggleGFIPanel(false)
-            ])
+                toggleGFIPanel(false),
+                ...(mapInfoEnabled ? [toggleMapInfoState(), purgeMapInfoResults()] : []),
+                ...(isMeasureEnabled ? [toggleControl("measure")] : []),
+                ...(mapHoverTrigger === 'hover' ? [setMapTrigger("click")] : []),
+                ...(infoMarkerIsShown ? [hideMapinfoMarker()] : [])
+            ]);
+        }
         );
 /**
  * Ensures that when the feature info is loaded it has parcelle data to proceed further to call NRU/ADS data
@@ -553,20 +579,22 @@ export const updateAdditionalLayerEpic = (action$, {
                             visibility: true
                         })
                 );
+            } else if (enabled && type === URBANISME_RESET_FEATURE_HIGHLIGHT) {
+                return Rx.Observable.of(
+                    updateAdditionalLayer(
+                        URBANISME_VECTOR_LAYER_ID,
+                        URBANISME_OWNER,
+                        'overlay',
+                        {
+                            id: URBANISME_VECTOR_LAYER_ID,
+                            features: [],
+                            type: "vector",
+                            name: "selectedPlot",
+                            visibility: true
+                        })
+                );
             }
-            return Rx.Observable.of(
-                updateAdditionalLayer(
-                    URBANISME_VECTOR_LAYER_ID,
-                    URBANISME_OWNER,
-                    'overlay',
-                    {
-                        id: URBANISME_VECTOR_LAYER_ID,
-                        features: [],
-                        type: "vector",
-                        name: "selectedPlot",
-                        visibility: true
-                    })
-            );
+            return Rx.Observable.empty();
         });
 
 export default {
@@ -580,7 +608,7 @@ export default {
     getUrbanismeFeatureInfoOnFeatureInfoClick,
     highlightFeatureEpic,
     updateAdditionalLayerEpic,
-    closeOnMeasureEnabledEpic,
-    closeOnMapHoverEnabledEpic,
-    closeOnIdentifyEnabledEpic
+    deactivateOnMeasureEnabledEpic,
+    deactivateOnMapHoverEnabledEpic,
+    deactivateOnIdentifyEnabledEpic
 };
