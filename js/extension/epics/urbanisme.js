@@ -26,7 +26,7 @@ import {
     purgeMapInfoResults, SET_MAP_TRIGGER, setMapTrigger,
     TOGGLE_MAPINFO_STATE,
     toggleMapInfoState,
-    hideMapinfoMarker
+    hideMapinfoMarker, closeIdentify
 } from "@mapstore/actions/mapInfo";
 
 import {localConfigSelector} from '@mapstore/selectors/localConfig';
@@ -292,7 +292,7 @@ export const deactivateOnIdentifyEnabledEpic = (action$, {getState}) =>
                 ? Rx.Observable.from([
                     toggleGFIPanel(false),
                     toggleUrbanismeTool(null),
-                    purgeMapInfoResults()
+                    closeIdentify()
                 ])
                 : Rx.Observable.empty();
         });
