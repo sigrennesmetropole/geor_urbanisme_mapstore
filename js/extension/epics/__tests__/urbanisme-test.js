@@ -105,10 +105,10 @@ describe('Urbanisme EPICS', () => {
         };
         testEpic(
             toggleLandPlanningEpic,
-            5,
+            4,
             toggleControl('urbanisme', null),
             actions => {
-                expect(actions.length).toBe(5);
+                expect(actions.length).toBe(4);
                 actions.map(action=> {
                     switch (action.type) {
                     case UPDATE_ADDITIONAL_LAYER:
@@ -116,7 +116,6 @@ describe('Urbanisme EPICS', () => {
                         expect([URBANISME_RASTER_LAYER_ID, URBANISME_VECTOR_LAYER_ID].includes(action.options.id)).toBeTruthy();
                         break;
                     case TOGGLE_MAPINFO_STATE:
-                    case PURGE_MAPINFO_RESULTS:
                         break;
                     case TOGGLE_CONTROL:
                         expect(action.control).toBe('measure');

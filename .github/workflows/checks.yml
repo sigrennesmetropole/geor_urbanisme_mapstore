@@ -11,22 +11,37 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        node-version: [12.x, 14.x, 16.x]
+        node-version: [14.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
     - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
+      with:
+        submodules: 'true'
+    - name: Use Node.js 14.x
       uses: actions/setup-node@v2
       with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
+        node-version: '14.x'
+     ############
+     # CACHING
+     ##########
+    - name: Cache dependencies
+      uses: actions/cache@v2
+      with:
+        path: ~/.npm
+        key: npm-${{ hashFiles('package-lock.json') }}
+        restore-keys: npm-
     - run: npm install
-    - run: npm run ext:build
-    - run: npm test
     - run: npm run lint
+    - run: npm test
+    - run: npm run ext:build
+    - name: 'Upload Artifact'
+      uses: actions/upload-artifact@v2
+      with:
+        name: Urbanisme.zip
+        path: dist/Urbanisme.zip
+        retention-days: 5
