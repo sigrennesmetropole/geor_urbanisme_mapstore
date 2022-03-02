@@ -29,10 +29,9 @@ jobs:
     - run: npm run lint
     - run: npm test
     - run: npm run ext:build
-  publish:
     - name: 'Upload Artifact'
-        uses: actions/upload-artifact@v2
-        with:
-          name: Extension zip
-          path: dist/Urbanisme.zip
-          retention-days: 5
+      uses: actions/upload-artifact@v2
+      with:
+        name: Extension zip
+        path: dist/Urbanisme.zip
+        retention-days: 5
