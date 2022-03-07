@@ -16,17 +16,20 @@ import {error} from "@mapstore/actions/notifications";
 import {CLICK_ON_MAP} from "@mapstore/actions/map";
 import {removeAdditionalLayer, updateAdditionalLayer} from '@mapstore/actions/additionallayers';
 import {
+    closeIdentify,
     errorFeatureInfo,
     exceptionsFeatureInfo,
     getVectorInfo,
+    hideMapinfoMarker,
     LOAD_FEATURE_INFO,
     loadFeatureInfo,
     newMapInfoRequest,
     noQueryableLayers,
-    purgeMapInfoResults, SET_MAP_TRIGGER, setMapTrigger,
+    purgeMapInfoResults,
+    SET_MAP_TRIGGER,
+    setMapTrigger,
     TOGGLE_MAPINFO_STATE,
-    toggleMapInfoState,
-    hideMapinfoMarker, closeIdentify
+    toggleMapInfoState
 } from "@mapstore/actions/mapInfo";
 
 import {localConfigSelector} from '@mapstore/selectors/localConfig';
@@ -86,9 +89,78 @@ import {
 import {localizedLayerStylesEnvSelector} from "@mapstore/selectors/localizedLayerStyles";
 import {buildIdentifyRequest, clickedPointToGeoJson, filterRequestParams} from "@mapstore/utils/MapInfoUtils";
 import {getFeatureInfo} from "@mapstore/api/identify";
-import {reprojectGeoJson} from "@mapstore/utils/CoordinatesUtils";
-import {showMarkerSelector, highlightStyleSelector, mapInfoDisabledSelector, mapTriggerSelector} from "@mapstore/selectors/mapInfo";
+import {
+    calculateCircleCoordinates,
+    calculateCircleRadiusFromPixel,
+    reproject,
+    reprojectGeoJson
+} from "@mapstore/utils/CoordinatesUtils";
+import {
+    highlightStyleSelector,
+    mapInfoDisabledSelector,
+    mapTriggerSelector,
+    showMarkerSelector
+} from "@mapstore/selectors/mapInfo";
 import {styleFeatures} from "@js/extension/utils/UrbanismeUtils";
+import {projectionSelector, resolutionsSelector} from "@mapstore/selectors/map";
+import {
+    GET_COORDINATES_FROM_PIXEL_HOOK,
+    GET_PIXEL_FROM_COORDINATES_HOOK,
+    getHook,
+    registerHook,
+    RESOLUTION_HOOK
+} from "@mapstore/utils/MapUtils";
+
+/**
+ * Recalculates pixel and geometric filter to allow also GFI emulation for WFS.
+ * This information is used also to switch to edit mode (feature grid) from GFI applying the same filter
+ * @param {object} point the point clicked, emitted by featureInfoClick action
+ * @param {string} projection map projection
+ */
+const updatePointWithGeometricFilter = (point, projection) => {
+    // calculate a query for edit
+    const lng = get(point, 'latlng.lng');
+    const lat = get(point, 'latlng.lat');
+    // update pixel if changed
+    const pos = reproject([lng, lat], 'EPSG:4326', projection);
+    const getPixel = getHook(GET_PIXEL_FROM_COORDINATES_HOOK);
+    let pixel;
+    if (getPixel) {
+        const [x, y] = getPixel([pos.x, pos.y]);
+        pixel = { x, y };
+    } else {
+        pixel = point.pixel;
+    }
+    const hook = getHook(GET_COORDINATES_FROM_PIXEL_HOOK);
+    const radius = calculateCircleRadiusFromPixel(
+        hook,
+        pixel,
+        pos,
+        5
+    );
+    // emulation of feature info filter to query WFS services (edit and/or WFS layer)
+    const geometricFilter = {
+        type: 'geometry',
+        enabled: true,
+        value: {
+            geometry: {
+                center: [pos.x, pos.y],
+                coordinates: calculateCircleCoordinates(pos, radius, 12),
+                extent: [pos.x - radius, pos.y - radius, pos.x + radius, pos.y + radius],
+                projection,
+                radius,
+                type: "Polygon"
+            },
+            method: "Circle",
+            operation: "INTERSECTS"
+        }
+    };
+    return {
+        ...point,
+        pixel,
+        geometricFilter
+    };
+};
 
 /**
  * Ensures that config for the urbanisme tool is fetched and loaded
@@ -103,10 +175,19 @@ export const setUpPluginEpic = (action$, store) =>
         // adds projections from localConfig.json
         // The extension do not see the state proj4 of MapStore (can not reproject in custom CRS as mapstore does)
         // so they have to be registered again in the extension.
-        const {projectionDefs = []} = localConfigSelector(store.getState()) ?? {};
+        const {projectionDefs = []} = localConfigSelector(state) ?? {};
         projectionDefs.forEach((proj) => {
             proj4.defs(proj.code, proj.def);
         });
+
+        // Re-register hook to get resolutions from the state. Extensions can't access map hooks,
+        // so the only way to make it calculate requests bounding box correctly is to force it
+        // to use proper resolution from the store
+        registerHook(RESOLUTION_HOOK, (currentZoom) => {
+            const resolutions = resolutionsSelector(store.getState()) ?? [];
+            return resolutions[currentZoom];
+        });
+
         return isConfigLoaded
             ? Rx.Observable.empty()
             : Rx.Observable.defer(() => getConfiguration()).switchMap(({cadastreWMSURL}) =>
@@ -202,6 +283,7 @@ export const clickOnMapEventEpic = (action$, {getState}) =>
             const activeTool = activeToolSelector(state);
             const urbanismeEnabled = urbanimseControlSelector(state);
             const mapInfoEnabled = !mapInfoDisabledSelector(state);
+            const projection = projectionSelector(state);
             if (mapInfoEnabled) {
                 return urbanismeEnabled
                     ? Rx.Observable.of(toggleUrbanismeTool(null))
@@ -209,7 +291,7 @@ export const clickOnMapEventEpic = (action$, {getState}) =>
             }
             return !isEmpty(activeTool) && !isPrinting
                 ? Rx.Observable.of(
-                    featureInfoClick(point, layer),
+                    featureInfoClick(updatePointWithGeometricFilter(point, projection), layer),
                     setAttributes(null),
                     loading(true, "dataLoading")
                 )
