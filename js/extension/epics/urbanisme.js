@@ -16,17 +16,20 @@ import {error} from "@mapstore/actions/notifications";
 import {CLICK_ON_MAP} from "@mapstore/actions/map";
 import {removeAdditionalLayer, updateAdditionalLayer} from '@mapstore/actions/additionallayers';
 import {
+    closeIdentify,
     errorFeatureInfo,
     exceptionsFeatureInfo,
     getVectorInfo,
+    hideMapinfoMarker,
     LOAD_FEATURE_INFO,
     loadFeatureInfo,
     newMapInfoRequest,
     noQueryableLayers,
-    purgeMapInfoResults, SET_MAP_TRIGGER, setMapTrigger,
+    purgeMapInfoResults,
+    SET_MAP_TRIGGER,
+    setMapTrigger,
     TOGGLE_MAPINFO_STATE,
-    toggleMapInfoState,
-    hideMapinfoMarker, closeIdentify
+    toggleMapInfoState
 } from "@mapstore/actions/mapInfo";
 
 import {localConfigSelector} from '@mapstore/selectors/localConfig';
@@ -86,9 +89,21 @@ import {
 import {localizedLayerStylesEnvSelector} from "@mapstore/selectors/localizedLayerStyles";
 import {buildIdentifyRequest, clickedPointToGeoJson, filterRequestParams} from "@mapstore/utils/MapInfoUtils";
 import {getFeatureInfo} from "@mapstore/api/identify";
-import {reprojectGeoJson} from "@mapstore/utils/CoordinatesUtils";
-import {showMarkerSelector, highlightStyleSelector, mapInfoDisabledSelector, mapTriggerSelector} from "@mapstore/selectors/mapInfo";
+import {
+    reprojectGeoJson
+} from "@mapstore/utils/CoordinatesUtils";
+import {
+    highlightStyleSelector,
+    mapInfoDisabledSelector,
+    mapTriggerSelector,
+    showMarkerSelector
+} from "@mapstore/selectors/mapInfo";
 import {styleFeatures} from "@js/extension/utils/UrbanismeUtils";
+import {resolutionsSelector} from "@mapstore/selectors/map";
+import {
+    registerHook,
+    RESOLUTION_HOOK
+} from "@mapstore/utils/MapUtils";
 
 /**
  * Ensures that config for the urbanisme tool is fetched and loaded
@@ -103,10 +118,19 @@ export const setUpPluginEpic = (action$, store) =>
         // adds projections from localConfig.json
         // The extension do not see the state proj4 of MapStore (can not reproject in custom CRS as mapstore does)
         // so they have to be registered again in the extension.
-        const {projectionDefs = []} = localConfigSelector(store.getState()) ?? {};
+        const {projectionDefs = []} = localConfigSelector(state) ?? {};
         projectionDefs.forEach((proj) => {
             proj4.defs(proj.code, proj.def);
         });
+
+        // Re-register hook to get resolutions from the state. Extensions can't access map hooks,
+        // so the only way to make it calculate requests bounding box correctly is to force it
+        // to use proper resolution from the store
+        registerHook(RESOLUTION_HOOK, (currentZoom) => {
+            const resolutions = resolutionsSelector(store.getState()) ?? [];
+            return resolutions[currentZoom];
+        });
+
         return isConfigLoaded
             ? Rx.Observable.empty()
             : Rx.Observable.defer(() => getConfiguration()).switchMap(({cadastreWMSURL}) =>
