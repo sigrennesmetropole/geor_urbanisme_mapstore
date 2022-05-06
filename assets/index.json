@@ -13,7 +13,7 @@
         "layer": "urbanisme_parcelle"
       },
       "dependencies": [
-        "BurgerMenu"
+        "SidebarMenu"
       ]
     }
   ]

@@ -27,9 +27,12 @@ import {
 import { CONTROL_NAME } from "../constants";
 import "../../assets/style.css";
 import {configSelector} from "@js/extension/selectors/urbanisme";
+import {mapLayoutValuesSelector} from "@js/extension/selectors/maplayout";
 
 const Urbanisme = connect(
     state => ({
+        containerStyle: mapLayoutValuesSelector(state, { right: true, rightPanel: true }),
+        mapHeight: state?.map?.present?.size?.height,
         enabled: state?.controls?.urbanisme?.enabled || false,
         urbanisme: state?.urbanisme || {}
     }),
@@ -97,6 +100,23 @@ const UrbanismePlugin = {
             position: 1501,
             doNotHide: true,
             priority: 2
+        },
+        SidebarMenu: {
+            name: CONTROL_NAME,
+            icon: <Glyphicon glyph="th-list" />,
+            text: <Message msgId="urbanisme.title" />,
+            tooltip: "urbanisme.title",
+            action: toggleControl.bind(null, CONTROL_NAME, null),
+            selector: createSelector(
+                configSelector,
+                (configLoaded) => ({
+                    style: !!configLoaded ? {} : { display: "none" } // Hide when config failed to load
+                })
+            ),
+            position: 1501,
+            toggle: true,
+            doNotHide: true,
+            priority: 1
         }
     },
     epics: updateEpicsName(),

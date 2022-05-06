@@ -17,6 +17,7 @@ import {
 } from "@js/extension/constants";
 import LandPlanning from "@js/extension/components/LandPlanningViewer";
 import {setAPIURL} from "@js/extension/api";
+import classnames from "classnames";
 
 /**
  * UrbanismeToolbar component
@@ -27,6 +28,8 @@ import {setAPIURL} from "@js/extension/api";
  * @param {func} props.onToggleTool triggered on clicking the toolbar buttons
  * @param {func} props.onToggleControl triggered on clicking the close button of the toolbar
  * @param {string} props.helpUrl configured help link from the localConfig
+ * @param {object} props.containerStyle style applied to the container element
+ * @param {number} props.mapHeight height of the map
  *
  */
 const UrbanismeToolbar = ({
@@ -36,6 +39,8 @@ const UrbanismeToolbar = ({
     onToggleTool = () => {},
     onToggleControl = () => {},
     helpUrl = HELP_LINK_DEFAULT,
+    containerStyle = {},
+    mapHeight = window.innerHeight,
     ...props
 }) => {
     const { activeTool = '', showGFIPanel = false } = urbanisme;
@@ -47,7 +52,7 @@ const UrbanismeToolbar = ({
 
     const { NRU, ADS } = URBANISME_TOOLS;
     const panelStyle = {
-        right: 5,
+        right: (containerStyle?.right ?? 0),
         zIndex: 100,
         position: "absolute",
         overflow: "auto",
@@ -58,7 +63,10 @@ const UrbanismeToolbar = ({
 
     return (
         <>
-            <div className="urbanismeToolbar" style={panelStyle}>
+            <div className={classnames({
+                "urbanismeToolbar": true,
+                "vertical": containerStyle?.rightPanel && mapHeight > 650
+            })} style={panelStyle}>
                 <Toolbar
                     btnDefaultProps={{
                         className: "square-button",
@@ -75,10 +83,9 @@ const UrbanismeToolbar = ({
                         },
                         {
                             text: <img src={ADSIcon} style={{
+                                maxWidth: '90%',
                                 width: 40,
-                                position: "relative",
-                                left: -
-                                3
+                                position: "relative"
                             }}/>,
                             tooltip: <Message msgId={'urbanisme.ads.tooltip'}/>,
                             bsStyle: activeTool === ADS ? "success" : "primary",
