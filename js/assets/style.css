@@ -11,8 +11,8 @@
     width: 40px;
 }
 
-.urbanismeToolbar.vertical .btn {
-    margin: 0;
+.urbanismeToolbar.vertical .btn-group .btn+.btn {
+    margin-left: 0;
 }
 
 .table-parcelle.table {
