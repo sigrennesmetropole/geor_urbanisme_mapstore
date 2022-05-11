@@ -85,7 +85,8 @@ const UrbanismeToolbar = ({
                             text: <img src={ADSIcon} style={{
                                 maxWidth: '90%',
                                 width: 40,
-                                position: "relative"
+                                position: "relative",
+                                imageRendering: '-webkit-optimize-contrast'
                             }}/>,
                             tooltip: <Message msgId={'urbanisme.ads.tooltip'}/>,
                             bsStyle: activeTool === ADS ? "success" : "primary",
