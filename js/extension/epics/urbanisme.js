@@ -7,11 +7,13 @@
  */
 
 import * as Rx from "rxjs";
-import {get, isEmpty, omit} from "lodash";
+import {findIndex, get, isEmpty, keys, omit} from "lodash";
 import uuid from 'uuid';
 
-import {SET_CONTROL_PROPERTY, TOGGLE_CONTROL, toggleControl} from "@mapstore/actions/controls";
-import {ANNOTATIONS} from "@mapstore/utils/AnnotationsUtils";
+import {
+    SET_CONTROL_PROPERTY, TOGGLE_CONTROL,
+    SET_CONTROL_PROPERTIES, setControlProperty
+} from "@mapstore/actions/controls";
 import {error} from "@mapstore/actions/notifications";
 import {CLICK_ON_MAP} from "@mapstore/actions/map";
 import {removeAdditionalLayer, updateAdditionalLayer} from '@mapstore/actions/additionallayers';
@@ -35,7 +37,7 @@ import {
 import {localConfigSelector} from '@mapstore/selectors/localConfig';
 import proj4 from 'proj4';
 
-import {createControlEnabledSelector, measureSelector} from "@mapstore/selectors/controls";
+import {createControlEnabledSelector} from "@mapstore/selectors/controls";
 import {wrapStartStop} from "@mapstore/observables/epics";
 
 import {
@@ -98,12 +100,17 @@ import {
     mapTriggerSelector,
     showMarkerSelector
 } from "@mapstore/selectors/mapInfo";
-import {styleFeatures} from "@js/extension/utils/UrbanismeUtils";
+import {styleFeatures} from "../utils/UrbanismeUtils";
 import {resolutionsSelector} from "@mapstore/selectors/map";
 import {
     registerHook,
     RESOLUTION_HOOK
 } from "@mapstore/utils/MapUtils";
+import {isFeatureGridOpen} from "@mapstore/selectors/featuregrid";
+import {closeFeatureGrid, OPEN_FEATURE_GRID} from "@mapstore/actions/featuregrid";
+import {START_DRAWING} from "@mapstore/actions/annotations";
+import {CHANGE_DRAWING_STATUS} from "@mapstore/actions/draw";
+import {coordinateEditorEnabledSelector} from "@mapstore/selectors/annotations";
 
 /**
  * Ensures that config for the urbanisme tool is fetched and loaded
@@ -167,7 +174,6 @@ export const toggleLandPlanningEpic = (action$, store) =>
             const {cadastreWMSURL: url, layer: name = DEFAULT_URBANISME_LAYER} = configSelector(state) || {};
             const enabled = urbanimseControlSelector(state);
             const mapInfoEnabled = get(state, "mapInfo.enabled");
-            const isMeasureEnabled = measureSelector(state);
             const mapHoverTrigger = mapTriggerSelector(state);
             if (enabled) {
                 return Rx.Observable.from([
@@ -196,7 +202,6 @@ export const toggleLandPlanningEpic = (action$, store) =>
                         })
                 ]).concat([
                     ...(mapInfoEnabled ? [toggleMapInfoState()] : []),
-                    ...(isMeasureEnabled ? [toggleControl("measure")] : []),
                     ...(mapHoverTrigger === 'hover' ? [setMapTrigger("click")] : [])
                 ]);
             }
@@ -231,6 +236,7 @@ export const clickOnMapEventEpic = (action$, {getState}) =>
                     ? Rx.Observable.of(toggleUrbanismeTool(null))
                     : Rx.Observable.empty();
             }
+
             return !isEmpty(activeTool) && !isPrinting
                 ? Rx.Observable.of(
                     featureInfoClick(point, layer),
@@ -251,13 +257,7 @@ export const cleanUpUrbanismeEpic = (action$, {getState}) =>
         .ofType(TOGGLE_CONTROL)
         .filter(({control}) => {
             const isUrbanismeEnabled = urbanimseControlSelector(getState());
-            const isAnnotationsEnabled = createControlEnabledSelector(ANNOTATIONS)(
-                getState()
-            );
-            return (
-                (control === CONTROL_NAME && !isUrbanismeEnabled) ||
-                (control === ANNOTATIONS && isAnnotationsEnabled && isUrbanismeEnabled)
-            );
+            return control === CONTROL_NAME && !isUrbanismeEnabled;
         })
         .switchMap(({control}) => {
             const state = getState();
@@ -271,27 +271,37 @@ export const cleanUpUrbanismeEpic = (action$, {getState}) =>
                     setAttributes(null),
                     resetFeatureHighlight()
                 ]);
-            } else if (control === ANNOTATIONS) {
-                observable$ = Rx.Observable.of(toggleControl(CONTROL_NAME));
             }
             return observable$;
         });
 
 /**
- * Ensures that the urbanisme plugin is deactivated when measurement tool is activated
+ * Ensures that the urbanisme plugin is deactivated when another drawing tool is activated
  * @memberof epics.urbanisme
- * @param {observable} action$ manages `SET_CONTROL_PROPERTY`
+ * @param {observable} action$ manages `TOGGLE_CONTROL, SET_CONTROL_PROPERTY, SET_CONTROL_PROPERTIES`
+ * @param store
  * @return {observable}
  */
-export const deactivateOnMeasureEnabledEpic = (action$, {getState}) =>
+export const deactivateOnDrawingToolEnabledEpic = (action$, store) =>
     action$
-        .ofType(SET_CONTROL_PROPERTY)
-        .filter(
-            ({control}) => control === "measure" && measureSelector(getState())
-        )
+        .ofType(SET_CONTROL_PROPERTIES, SET_CONTROL_PROPERTY, TOGGLE_CONTROL, OPEN_FEATURE_GRID)
+        .filter(({control, property, properties = [], type}) => {
+            const shutdownList = ['measure', 'street-view'];
+            const state = store.getState();
+            const controlState = createControlEnabledSelector(control)(state);
+            switch (type) {
+            case OPEN_FEATURE_GRID:
+                return true;
+            case SET_CONTROL_PROPERTY:
+            case TOGGLE_CONTROL:
+                return (property === 'enabled' || !property) && controlState && shutdownList.includes(control);
+            default:
+                return findIndex(keys(properties), prop => prop === 'enabled') > -1 && controlState && shutdownList.includes(control);
+            }
+        })
         .switchMap(() => {
-            const urbanismeEnabled = urbanimseControlSelector(getState());
-            return urbanismeEnabled
+            const activeTool = activeToolSelector(store.getState());
+            return activeTool
                 ? Rx.Observable.from([
                     toggleGFIPanel(false),
                     toggleUrbanismeTool(null),
@@ -299,6 +309,42 @@ export const deactivateOnMeasureEnabledEpic = (action$, {getState}) =>
                 ])
                 : Rx.Observable.empty();
         });
+
+/**
+ * Deactivate active urbanisme tool when annotations drawing mode is on
+ * @param action$
+ * @param store
+ * @returns {*}
+ */
+export const toggleUrbanismeToolOnAnnotationsDrawing = (action$, store) =>
+    action$.ofType(START_DRAWING, CHANGE_DRAWING_STATUS)
+        .filter(({type, status, owner}) => {
+            const activeTool = activeToolSelector(store.getState());
+            switch (type) {
+            case CHANGE_DRAWING_STATUS:
+                return !!activeTool && ((status === 'drawOrEdit' && owner === 'annotations') || (status === 'start' && owner === 'queryform'));
+            case START_DRAWING:
+            default:
+                return !!activeTool;
+            }
+        })
+        .switchMap( () =>
+            Rx.Observable.from([
+                toggleGFIPanel(false),
+                toggleUrbanismeTool(null)
+            ]));
+
+/**
+ * Close annotations when urbanisme tool is toggled on
+ * @param action$
+ * @param store
+ * @returns {*}
+ */
+export const urbanismeCloseAnnotationsOnToolToggledOn = (action$, store) =>
+    action$.ofType(TOGGLE_TOOL)
+        .filter(({}) => activeToolSelector(store.getState()) && coordinateEditorEnabledSelector(store.getState())
+        )
+        .switchMap(() => Rx.Observable.from([purgeMapInfoResults()]));
 
 /**
  * Ensures that the urbanisme plugin active tool is getting deactivated when Identify tool is activated
@@ -319,6 +365,39 @@ export const deactivateOnIdentifyEnabledEpic = (action$, {getState}) =>
                     closeIdentify()
                 ])
                 : Rx.Observable.empty();
+        });
+
+/**
+ * Close set of drawing tools when urbanisme tool is toggled on
+ * @param action$
+ * @param getState
+ * @returns {*}
+ */
+export const closeAnotherDrawingToolOnToolEnabled = (action$, {getState}) =>
+    action$
+        .ofType(TOGGLE_TOOL)
+        .filter(() => activeToolSelector(getState()))
+        .switchMap(() => {
+            const state = getState();
+            return Rx.Observable.from(['street-view', 'measure'].map(tool => state?.controls[tool]?.enabled ? setControlProperty(tool, 'enabled', null) : null).filter(Boolean));
+        });
+
+/**
+ * Toggle off cadastrap selection tool when urbanisme tool is active
+ * @param action$
+ * @param getState
+ * @returns {*}
+ */
+export const toggleOffCadastrappToolOnToolEnabled = (action$, {getState}) =>
+    action$
+        .ofType(TOGGLE_TOOL)
+        .filter(() => activeToolSelector(getState()) && getState()?.cadastrapp?.selectionType)
+        .switchMap(() => {
+            return Rx.Observable.from([{
+                type: 'CADASTRAPP:TOGGLE_SELECTION',
+                selectionType: null,
+                resetDraw: false
+            }]);
         });
 
 /**
@@ -366,22 +445,17 @@ export const onClosePanelEpic = action$ =>
 export const onToogleToolEpic = (action$, {getState}) =>
     action$
         .ofType(TOGGLE_TOOL)
-        .filter(() => {
-            const state = getState();
-            return activeToolSelector(state);
-        })
         .switchMap(() => {
             const state = getState();
             const mapInfoEnabled = !mapInfoDisabledSelector(state);
             const infoMarkerIsShown = showMarkerSelector(state);
-            const isMeasureEnabled = measureSelector(state);
             const mapHoverTrigger = mapTriggerSelector(state);
             return Rx.Observable.from([
                 resetFeatureHighlight(),
                 setAttributes(null),
                 toggleGFIPanel(false),
                 ...(mapInfoEnabled ? [toggleMapInfoState(), purgeMapInfoResults()] : []),
-                ...(isMeasureEnabled ? [toggleControl("measure")] : []),
+                ...(activeToolSelector(state) && isFeatureGridOpen(state) ? [closeFeatureGrid()] : []),
                 ...(mapHoverTrigger === 'hover' ? [setMapTrigger("click")] : []),
                 ...(infoMarkerIsShown ? [hideMapinfoMarker()] : [])
             ]);
@@ -403,9 +477,10 @@ export const getFeatureInfoEpic = (action$, {getState}) =>
                 !isEmpty(activeToolSelector(getState()))
         )
         .switchMap(({layerMetadata}) => {
-            const {idParcelleKey} = configSelector(getState()) ?? {};
+            const state = getState();
+            const {idParcelleKey} = configSelector(state) ?? {};
             const parcelleId = layerMetadata.features?.[0]?.properties?.[idParcelleKey ?? "id_parc"] || "";
-            const activeTool = activeToolSelector(getState());
+            const activeTool = activeToolSelector(state);
             if (isEmpty(parcelleId)) {
                 return Rx.Observable.of(
                     loading(false, "dataLoading"),
@@ -493,7 +568,7 @@ export const highlightFeatureEpic = (action$, {getState}) =>
             const parcelleId = layerMetadata.features?.[0]?.properties?.[idParcelleKey ?? "id_parc"] || "";
             if (isEmpty(parcelleId)) {
                 return Rx.Observable.of(
-                    resetFeatureHighlight(),
+                    resetFeatureHighlight()
                 );
             }
             return Rx.Observable.of(
@@ -588,7 +663,7 @@ export const updateAdditionalLayerEpic = (action$, {
                 const styledFeatures = styleFeatures(feature, omit(highlightStyleSelector(state), ["radius"]));
                 const features = styledFeatures && featureCrs ? styledFeatures.map( f => reprojectGeoJson(
                     f,
-                    featureCrs,
+                    featureCrs
                 )) : styledFeatures;
                 const markerFeature = clickedPointToGeoJson(point.latlng);
                 return Rx.Observable.of(
@@ -633,7 +708,11 @@ export default {
     getUrbanismeFeatureInfoOnFeatureInfoClick,
     highlightFeatureEpic,
     updateAdditionalLayerEpic,
-    deactivateOnMeasureEnabledEpic,
+    deactivateOnDrawingToolEnabledEpic,
     deactivateOnMapHoverEnabledEpic,
-    deactivateOnIdentifyEnabledEpic
+    deactivateOnIdentifyEnabledEpic,
+    closeAnotherDrawingToolOnToolEnabled,
+    toggleOffCadastrappToolOnToolEnabled,
+    toggleUrbanismeToolOnAnnotationsDrawing,
+    urbanismeCloseAnnotationsOnToolToggledOn
 };

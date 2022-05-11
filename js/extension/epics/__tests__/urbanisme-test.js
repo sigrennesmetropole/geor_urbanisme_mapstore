@@ -17,7 +17,7 @@ import {
     toggleLandPlanningEpic,
     cleanUpUrbanismeEpic,
     clickOnMapEventEpic,
-    deactivateOnMeasureEnabledEpic,
+    deactivateOnDrawingToolEnabledEpic,
     getFeatureInfoEpic,
     onClosePanelEpic,
     onToogleToolEpic,
@@ -250,7 +250,7 @@ describe('Urbanisme EPICS', () => {
     it('closeOnMeasureEnabledEpic close when urbanisme plugin when measurement is opened', (done) => {
         const state = { controls: { measure: { enabled: true}, urbanisme: { enabled: true}}};
         testEpic(
-            deactivateOnMeasureEnabledEpic,
+            deactivateOnDrawingToolEnabledEpic,
             3,
             setControlProperty("measure", "enabled", true),
             actions => {
