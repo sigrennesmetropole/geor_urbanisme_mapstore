@@ -99,16 +99,16 @@ describe('Urbanisme EPICS', () => {
 
     it('toggleLandPlanningEpic when Urbanisme tool enabled', (done) => {
         const state = {
-            controls: { urbanisme: { enabled: true }, measure: {enabled: true}},
+            controls: { urbanisme: { enabled: true }},
             urbanisme: { config: { cadastreWMSURL: "/cadastreWMSURL"}},
             mapInfo: {enabled: true}
         };
         testEpic(
             toggleLandPlanningEpic,
-            4,
+            3,
             toggleControl('urbanisme', null),
             actions => {
-                expect(actions.length).toBe(4);
+                expect(actions.length).toBe(3);
                 actions.map(action=> {
                     switch (action.type) {
                     case UPDATE_ADDITIONAL_LAYER:
@@ -226,29 +226,11 @@ describe('Urbanisme EPICS', () => {
             state);
     });
 
-    it('cleanUpUrbanismeEpic opening annotation when urbanisme plugin is opened', (done) => {
-        const state = { controls: { urbanisme: { enabled: true}, annotations: { enabled: true}}};
-        testEpic(
-            cleanUpUrbanismeEpic,
-            1,
-            toggleControl("annotations"),
-            actions => {
-                expect(actions.length).toBe(1);
-                actions.map(action=>{
-                    switch (action.type) {
-                    case TOGGLE_CONTROL:
-                        break;
-                    default:
-                        expect(true).toBe(false);
-                    }
-                });
-                done();
-            },
-            state);
-    });
-
-    it('closeOnMeasureEnabledEpic close when urbanisme plugin when measurement is opened', (done) => {
-        const state = { controls: { measure: { enabled: true}, urbanisme: { enabled: true}}};
+    it('toggleOffOnMeasureEnabledEpic toggle off urbanisme plugin when measurement is opened', (done) => {
+        const state = {
+            controls: { measure: { enabled: true}, urbanisme: { enabled: true}},
+            urbanisme: { activeTool: "ADS"}
+        };
         testEpic(
             deactivateOnDrawingToolEnabledEpic,
             3,
@@ -440,10 +422,10 @@ describe('Urbanisme EPICS', () => {
         };
         testEpic(
             onToogleToolEpic,
-            4,
+            3,
             toggleUrbanismeTool('NRU'),
             actions => {
-                expect(actions.length).toBe(4);
+                expect(actions.length).toBe(3);
                 actions.map(action=>{
                     switch (action.type) {
                     case URBANISME_RESET_FEATURE_HIGHLIGHT:
@@ -453,9 +435,6 @@ describe('Urbanisme EPICS', () => {
                         break;
                     case TOGGLE_VIEWER_PANEL:
                         expect(action.enabled).toBe(false);
-                        break;
-                    case TOGGLE_CONTROL:
-                        expect(action.control).toBe("measure");
                         break;
                     default:
                         expect(true).toBe(false);
