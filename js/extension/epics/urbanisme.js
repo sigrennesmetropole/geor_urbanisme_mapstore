@@ -454,9 +454,9 @@ export const onToogleToolEpic = (action$, {getState}) =>
                 resetFeatureHighlight(),
                 setAttributes(null),
                 toggleGFIPanel(false),
-                ...(mapInfoEnabled ? [toggleMapInfoState(), purgeMapInfoResults()] : []),
+                ...(activeToolSelector(state) && mapInfoEnabled ? [toggleMapInfoState(), purgeMapInfoResults()] : []),
                 ...(activeToolSelector(state) && isFeatureGridOpen(state) ? [closeFeatureGrid()] : []),
-                ...(mapHoverTrigger === 'hover' ? [setMapTrigger("click")] : []),
+                ...(activeToolSelector(state) && mapHoverTrigger === 'hover' ? [setMapTrigger("click")] : []),
                 ...(infoMarkerIsShown ? [hideMapinfoMarker()] : [])
             ]);
         }
