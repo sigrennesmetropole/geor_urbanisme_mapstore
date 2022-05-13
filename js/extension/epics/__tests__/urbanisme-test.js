@@ -8,8 +8,8 @@
 import expect from 'expect';
 
 import { testEpic, addTimeoutEpic } from '@mapstore/epics/__tests__/epicTestUtils';
-import { toggleControl, TOGGLE_CONTROL, setControlProperty } from '@mapstore/actions/controls';
-import { clickOnMap } from '@mapstore/actions/map';
+import { toggleControl, TOGGLE_CONTROL } from '@mapstore/actions/controls';
+import {clickOnMap, registerEventListener} from '@mapstore/actions/map';
 import { PURGE_MAPINFO_RESULTS, TOGGLE_MAPINFO_STATE, loadFeatureInfo } from '@mapstore/actions/mapInfo';
 
 import {
@@ -17,11 +17,12 @@ import {
     toggleLandPlanningEpic,
     cleanUpUrbanismeEpic,
     clickOnMapEventEpic,
-    deactivateOnDrawingToolEnabledEpic,
     getFeatureInfoEpic,
     onClosePanelEpic,
     onToogleToolEpic,
-    updateAdditionalLayerEpic, highlightFeatureEpic
+    updateAdditionalLayerEpic,
+    highlightFeatureEpic,
+    tearDownUrbanismeOnDrawToolActive
 } from '../urbanisme';
 import {
     setUp,
@@ -226,17 +227,17 @@ describe('Urbanisme EPICS', () => {
             state);
     });
 
-    it('toggleOffOnMeasureEnabledEpic toggle off urbanisme plugin when measurement is opened', (done) => {
+    it('tearDownUrbanismeOnDrawToolActive toggle off urbanisme tool when measurement is opened', (done) => {
         const state = {
             controls: { measure: { enabled: true}, urbanisme: { enabled: true}},
             urbanisme: { activeTool: "ADS"}
         };
         testEpic(
-            deactivateOnDrawingToolEnabledEpic,
-            3,
-            setControlProperty("measure", "enabled", true),
+            tearDownUrbanismeOnDrawToolActive,
+            2,
+            registerEventListener('click', 'measure'),
             actions => {
-                expect(actions.length).toBe(3);
+                expect(actions.length).toBe(2);
                 actions.map(action=>{
                     switch (action.type) {
                     case TOGGLE_TOOL:
@@ -244,8 +245,6 @@ describe('Urbanisme EPICS', () => {
                         break;
                     case TOGGLE_VIEWER_PANEL:
                         expect(action.enabled).toBe(false);
-                        break;
-                    case PURGE_MAPINFO_RESULTS:
                         break;
                     default:
                         expect(true).toBe(false);
