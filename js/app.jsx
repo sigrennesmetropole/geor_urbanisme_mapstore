@@ -24,7 +24,6 @@ ConfigUtils.setConfigProp('themePrefix', 'MapStoreExtension');
  *
  * ConfigUtils.setLocalConfigurationFile('localConfig.json');
  */
-ConfigUtils.setLocalConfigurationFile('localConfig.json');
 
 /**
  * Use a custom application configuration file with:

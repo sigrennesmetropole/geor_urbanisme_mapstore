@@ -98,12 +98,13 @@ import {
     mapTriggerSelector,
     showMarkerSelector
 } from "@mapstore/selectors/mapInfo";
-import {styleFeatures, shutdownToolOnAnotherToolDrawing} from "../utils/UrbanismeUtils";
+import {styleFeatures} from "../utils/UrbanismeUtils";
 import {resolutionsSelector} from "@mapstore/selectors/map";
 import {
     registerHook,
     RESOLUTION_HOOK
 } from "@mapstore/utils/MapUtils";
+import {shutdownToolOnAnotherToolDrawing} from "@mapstore/utils/ControlUtils";
 
 /**
  * Ensures that config for the urbanisme tool is fetched and loaded
