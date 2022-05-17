@@ -10,6 +10,8 @@ import React from "react";
 import isEmpty from "lodash/isEmpty";
 import Message from "@mapstore/components/I18N/Message";
 
+/* eslint-disable camelcase */
+
 /**
  * ADSInfo component
  * @param {object} props Component props

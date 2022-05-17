@@ -18,6 +18,8 @@ export const setAPIURL = (config) => {
     urbanismeURL = config?.urbanismeappUrl || DEFAULT_URBANISMEAPP_URL;
 };
 
+/* eslint-disable camelcase */
+
 /**
  * Retrieves the initial configuration for cadastrapp services
  * @returns {object} the configuration of the services containing base details of WMS/WFS services
