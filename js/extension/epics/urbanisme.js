@@ -204,7 +204,8 @@ export const toggleLandPlanningEpic = (action$, store) =>
             return !isEmpty(layer)
                 ? Rx.Observable.from([
                     removeAdditionalLayer({id: URBANISME_RASTER_LAYER_ID, owner: URBANISME_OWNER}),
-                    removeAdditionalLayer({id: URBANISME_VECTOR_LAYER_ID, owner: URBANISME_OWNER})
+                    removeAdditionalLayer({id: URBANISME_VECTOR_LAYER_ID, owner: URBANISME_OWNER}),
+                    purgeMapInfoResults()
                 ]).concat(!mapInfoEnabled ? [toggleMapInfoState()] : [])
                 : Rx.Observable.empty();
         });
