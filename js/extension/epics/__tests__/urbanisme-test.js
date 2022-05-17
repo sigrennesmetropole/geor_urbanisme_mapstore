@@ -281,7 +281,7 @@ describe('Urbanisme EPICS', () => {
         mockAxios.onGet(`${CADASTRAPP_URL}/getParcelle`).reply(200, [{parcelle: "parcelle", ccopre: "ccopre",
             ccosec: "ccosec", dnupla: "dnupla", dnvoiri: "dnvoiri", cconvo: "cconvo", dvoilib: "dvoilib", dcntpa: "dcntpa"}]);
         mockAxios.onGet(`${URBANISMEAPP_URL}/renseignUrba`).reply(200, {libelles: [{libelle: "Test"}]});
-        mockAxios.onGet(`${CADASTRAPP_URL}/getFIC`, ).reply((config)=>{
+        mockAxios.onGet(`${CADASTRAPP_URL}/getFIC` ).reply((config)=>{
             if (config.params.onglet === 0) return [200, [{surfc: "surfc"}]];
             return [200, [{comptecommunal: "codeProprio"}]];
         });
@@ -328,7 +328,7 @@ describe('Urbanisme EPICS', () => {
         mockAxios.onGet(`${CADASTRAPP_URL}/getCommune`).reply(200, []);
         mockAxios.onGet(`${CADASTRAPP_URL}/getParcelle`).reply(200, []);
         mockAxios.onGet(`${URBANISMEAPP_URL}/renseignUrba`).reply(200, {});
-        mockAxios.onGet(`${CADASTRAPP_URL}/getFIC`, ).reply((config)=>{
+        mockAxios.onGet(`${CADASTRAPP_URL}/getFIC` ).reply((config)=>{
             if (config.params.onglet === 0) return [200, []];
             return [200, []];
         });
