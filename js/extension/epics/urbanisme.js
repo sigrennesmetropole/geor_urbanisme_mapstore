@@ -105,7 +105,7 @@ import {
     RESOLUTION_HOOK
 } from "@mapstore/utils/MapUtils";
 import {shutdownToolOnAnotherToolDrawing} from "@mapstore/utils/ControlUtils";
-
+import {setAPIURL} from "@js/extension/api";
 /**
  * Ensures that config for the urbanisme tool is fetched and loaded
  * @memberof epics.urbanisme
@@ -113,9 +113,10 @@ import {shutdownToolOnAnotherToolDrawing} from "@mapstore/utils/ControlUtils";
  * @return {observable}
  */
 export const setUpPluginEpic = (action$, store) =>
-    action$.ofType(SET_UP).switchMap(() => {
+    action$.ofType(SET_UP).switchMap((action) => {
         const state = store.getState();
         const isConfigLoaded = configLoadSelector(state);
+        setAPIURL(action.initConfig);
         // adds projections from localConfig.json
         // The extension do not see the state proj4 of MapStore (can not reproject in custom CRS as mapstore does)
         // so they have to be registered again in the extension.
@@ -142,10 +143,10 @@ export const setUpPluginEpic = (action$, store) =>
                     loading(false, 'configLoading'),
                     e => {
                         console.log(e); // eslint-disable-line no-console
-                        return Rx.Observable.of(error({
+                        return Rx.Observable.from([error({
                             title: "Error",
                             message: "Unable to setup urbanisme app"
-                        }), loading(false, 'configLoading'));
+                        }), loading(false, 'configLoading')]);
 
                     }
                 )

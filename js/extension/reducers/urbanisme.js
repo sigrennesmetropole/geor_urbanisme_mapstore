@@ -25,7 +25,8 @@ const initialState = {
 export default function urbanisme(state = initialState, action) {
     switch (action.type) {
     case SET_UP:
-        return set('config', action.initConfig, state);
+        const { cadastrappUrl, urbanismeappUrl, ...initConfig } = action.initConfig;
+        return set('config', initConfig, state);
     case SET_CONFIG:
         return { ...state, config: {...state.config, ...action.config }};
     case TOGGLE_TOOL:
