@@ -93,8 +93,8 @@ const UrbanismePlugin = {
             action: toggleControl.bind(null, CONTROL_NAME, null),
             selector: createSelector(
                 configSelector,
-                (configLoaded) => ({
-                    style: !!configLoaded ? {} : { display: "none" } // Hide when config failed to load
+                (config) => ({
+                    style: !!config?.cadastreWMSURL ? {} : { display: "none" } // Hide when config failed to load
                 })
             ),
             position: 1501,
@@ -109,8 +109,8 @@ const UrbanismePlugin = {
             action: toggleControl.bind(null, CONTROL_NAME, null),
             selector: createSelector(
                 configSelector,
-                (configLoaded) => ({
-                    style: !!configLoaded ? {} : { display: "none" } // Hide when config failed to load
+                (config) => ({
+                    style: !!config?.cadastreWMSURL ? {} : { display: "none" } // Hide when config failed to load
                 })
             ),
             position: 1501,

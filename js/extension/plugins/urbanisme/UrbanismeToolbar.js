@@ -16,7 +16,6 @@ import {
     HELP_LINK_DEFAULT
 } from "@js/extension/constants";
 import LandPlanning from "@js/extension/components/LandPlanningViewer";
-import {setAPIURL} from "@js/extension/api";
 import classnames from "classnames";
 
 /**
@@ -46,9 +45,8 @@ const UrbanismeToolbar = ({
     const { activeTool = '', showGFIPanel = false } = urbanisme;
     useEffect(() => {
         const { cadastrappUrl, layer, urbanismeappUrl, idParcelleKey} = props;
-        setAPIURL({cadastrappUrl, urbanismeappUrl});
-        onSetUp({ layer, idParcelleKey });
-    }, [setAPIURL, onSetUp]);
+        onSetUp({ layer, idParcelleKey, cadastrappUrl, urbanismeappUrl });
+    }, [onSetUp]);
 
     const { NRU, ADS } = URBANISME_TOOLS;
     const panelStyle = {

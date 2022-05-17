@@ -8,8 +8,8 @@
 import expect from 'expect';
 
 import { testEpic, addTimeoutEpic } from '@mapstore/epics/__tests__/epicTestUtils';
-import { toggleControl, TOGGLE_CONTROL, setControlProperty } from '@mapstore/actions/controls';
-import { clickOnMap } from '@mapstore/actions/map';
+import { toggleControl, TOGGLE_CONTROL } from '@mapstore/actions/controls';
+import {clickOnMap, registerEventListener} from '@mapstore/actions/map';
 import { PURGE_MAPINFO_RESULTS, TOGGLE_MAPINFO_STATE, loadFeatureInfo } from '@mapstore/actions/mapInfo';
 
 import {
@@ -17,11 +17,12 @@ import {
     toggleLandPlanningEpic,
     cleanUpUrbanismeEpic,
     clickOnMapEventEpic,
-    deactivateOnMeasureEnabledEpic,
     getFeatureInfoEpic,
     onClosePanelEpic,
     onToogleToolEpic,
-    updateAdditionalLayerEpic, highlightFeatureEpic
+    updateAdditionalLayerEpic,
+    highlightFeatureEpic,
+    tearDownUrbanismeOnDrawToolActive
 } from '../urbanisme';
 import {
     setUp,
@@ -99,16 +100,16 @@ describe('Urbanisme EPICS', () => {
 
     it('toggleLandPlanningEpic when Urbanisme tool enabled', (done) => {
         const state = {
-            controls: { urbanisme: { enabled: true }, measure: {enabled: true}},
+            controls: { urbanisme: { enabled: true }},
             urbanisme: { config: { cadastreWMSURL: "/cadastreWMSURL"}},
             mapInfo: {enabled: true}
         };
         testEpic(
             toggleLandPlanningEpic,
-            4,
+            3,
             toggleControl('urbanisme', null),
             actions => {
-                expect(actions.length).toBe(4);
+                expect(actions.length).toBe(3);
                 actions.map(action=> {
                     switch (action.type) {
                     case UPDATE_ADDITIONAL_LAYER:
@@ -226,35 +227,17 @@ describe('Urbanisme EPICS', () => {
             state);
     });
 
-    it('cleanUpUrbanismeEpic opening annotation when urbanisme plugin is opened', (done) => {
-        const state = { controls: { urbanisme: { enabled: true}, annotations: { enabled: true}}};
+    it('tearDownUrbanismeOnDrawToolActive toggle off urbanisme tool when measurement is opened', (done) => {
+        const state = {
+            controls: { measure: { enabled: true}, urbanisme: { enabled: true}},
+            urbanisme: { activeTool: "ADS"}
+        };
         testEpic(
-            cleanUpUrbanismeEpic,
-            1,
-            toggleControl("annotations"),
+            tearDownUrbanismeOnDrawToolActive,
+            2,
+            registerEventListener('click', 'measure'),
             actions => {
-                expect(actions.length).toBe(1);
-                actions.map(action=>{
-                    switch (action.type) {
-                    case TOGGLE_CONTROL:
-                        break;
-                    default:
-                        expect(true).toBe(false);
-                    }
-                });
-                done();
-            },
-            state);
-    });
-
-    it('closeOnMeasureEnabledEpic close when urbanisme plugin when measurement is opened', (done) => {
-        const state = { controls: { measure: { enabled: true}, urbanisme: { enabled: true}}};
-        testEpic(
-            deactivateOnMeasureEnabledEpic,
-            3,
-            setControlProperty("measure", "enabled", true),
-            actions => {
-                expect(actions.length).toBe(3);
+                expect(actions.length).toBe(2);
                 actions.map(action=>{
                     switch (action.type) {
                     case TOGGLE_TOOL:
@@ -262,8 +245,6 @@ describe('Urbanisme EPICS', () => {
                         break;
                     case TOGGLE_VIEWER_PANEL:
                         expect(action.enabled).toBe(false);
-                        break;
-                    case PURGE_MAPINFO_RESULTS:
                         break;
                     default:
                         expect(true).toBe(false);
@@ -300,7 +281,7 @@ describe('Urbanisme EPICS', () => {
         mockAxios.onGet(`${CADASTRAPP_URL}/getParcelle`).reply(200, [{parcelle: "parcelle", ccopre: "ccopre",
             ccosec: "ccosec", dnupla: "dnupla", dnvoiri: "dnvoiri", cconvo: "cconvo", dvoilib: "dvoilib", dcntpa: "dcntpa"}]);
         mockAxios.onGet(`${URBANISMEAPP_URL}/renseignUrba`).reply(200, {libelles: [{libelle: "Test"}]});
-        mockAxios.onGet(`${CADASTRAPP_URL}/getFIC`, ).reply((config)=>{
+        mockAxios.onGet(`${CADASTRAPP_URL}/getFIC` ).reply((config)=>{
             if (config.params.onglet === 0) return [200, [{surfc: "surfc"}]];
             return [200, [{comptecommunal: "codeProprio"}]];
         });
@@ -347,7 +328,7 @@ describe('Urbanisme EPICS', () => {
         mockAxios.onGet(`${CADASTRAPP_URL}/getCommune`).reply(200, []);
         mockAxios.onGet(`${CADASTRAPP_URL}/getParcelle`).reply(200, []);
         mockAxios.onGet(`${URBANISMEAPP_URL}/renseignUrba`).reply(200, {});
-        mockAxios.onGet(`${CADASTRAPP_URL}/getFIC`, ).reply((config)=>{
+        mockAxios.onGet(`${CADASTRAPP_URL}/getFIC` ).reply((config)=>{
             if (config.params.onglet === 0) return [200, []];
             return [200, []];
         });
@@ -440,10 +421,10 @@ describe('Urbanisme EPICS', () => {
         };
         testEpic(
             onToogleToolEpic,
-            4,
+            3,
             toggleUrbanismeTool('NRU'),
             actions => {
-                expect(actions.length).toBe(4);
+                expect(actions.length).toBe(3);
                 actions.map(action=>{
                     switch (action.type) {
                     case URBANISME_RESET_FEATURE_HIGHLIGHT:
@@ -453,9 +434,6 @@ describe('Urbanisme EPICS', () => {
                         break;
                     case TOGGLE_VIEWER_PANEL:
                         expect(action.enabled).toBe(false);
-                        break;
-                    case TOGGLE_CONTROL:
-                        expect(action.control).toBe("measure");
                         break;
                     default:
                         expect(true).toBe(false);

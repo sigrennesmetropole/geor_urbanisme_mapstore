@@ -2,7 +2,7 @@
 const createExtensionWebpackConfig = require('../../MapStore2/build/createExtensionWebpackConfig');
 
 const { name } = require('../../config');
-const commons = require('./commons');
+const { plugins: commonsPlugins, ...commons } = require('./commons');
 const webpackConfig = createExtensionWebpackConfig({
     prod: false,
     name,
@@ -10,11 +10,12 @@ const webpackConfig = createExtensionWebpackConfig({
     overrides: {
         // serve translations (and index.json)
         devServer: {
-            publicPath: "/extension/",
+            publicPath: "/extensions/",
             contentBase: './assets',
-            contentBasePublicPath: '/extension/'
+            contentBasePublicPath: '/extensions/'
         }
-    }
+    },
+    plugins: [ ...commonsPlugins ]
 });
 
 module.exports = webpackConfig;

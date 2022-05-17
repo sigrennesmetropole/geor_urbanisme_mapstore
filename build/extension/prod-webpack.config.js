@@ -5,7 +5,7 @@ const createExtensionWebpackConfig = require('../../MapStore2/build/createExtens
 const CopyPlugin = require('copy-webpack-plugin');
 const ZipPlugin = require('zip-webpack-plugin');
 const {name} = require('../../config');
-const commons = require('./commons');
+const { plugins: commonsPlugins, ...commons} = require('./commons');
 
 // the build configuration for production allow to create the final zip file, compressed accordingly
 const plugins = [
@@ -22,7 +22,8 @@ const plugins = [
             // other files have to be placed in the root, with the same name
             return path.basename(assetPath);
         }
-    })
+    }),
+    ...commonsPlugins
 ];
 
 // Temporary TODO: Has to be updated in createExtensionWebpackConfig
