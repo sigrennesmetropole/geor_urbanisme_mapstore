@@ -82,9 +82,15 @@ const NRUInfo = (props) => {
                 </tbody>
             </Table>
             <div>
-                {(props.libelles || []).map(libelle => (
-                    <p className="libelle" dangerouslySetInnerHTML={{ __html: libelle }}></p>
-                ))}
+                {(!!props?.groupesLibelle) ?
+                    (props.groupesLibelle || []).map(groupe => (
+                        (groupe.libelles || []).map(libelle => (
+                            <p className="libelle" dangerouslySetInnerHTML={{ __html: libelle }}></p>))
+                    )) :
+                    (props.libelles || []).map(libelle => (
+                        <p className="libelle" dangerouslySetInnerHTML={{ __html: libelle }}></p>
+                    ))
+                }
             </div>
         </div>
     );
