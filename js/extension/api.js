@@ -12,10 +12,12 @@ import {DEFAULT_CADASTRAPP_URL, DEFAULT_URBANISMEAPP_URL} from "@js/extension/co
 
 let cadastrappURL;
 let urbanismeURL;
+let renseignUrbaGroupe;
 
 export const setAPIURL = (config) => {
     cadastrappURL = config?.cadastrappUrl || DEFAULT_CADASTRAPP_URL;
     urbanismeURL = config?.urbanismeappUrl || DEFAULT_URBANISMEAPP_URL;
+    renseignUrbaGroupe = !!config?.urbanismeRenseignGroupe;
 };
 
 /**
@@ -73,12 +75,28 @@ export const getParcelle = code => {
         });
 };
 
-export const getRenseignUrba = parcelle => {
+export const getRenseignUrbaNonGroupe = parcelle => {
     return axios
         .get(`${urbanismeURL}/renseignUrba`, { params: { parcelle } })
         .then(({ data }) => {
             return { libelles: (data?.libelles || []).map(({ libelle }) => libelle) };
         });
+};
+
+export const getRenseignUrbaGroupe = parcelle => {
+    return axios
+        .get(`${urbanismeURL}/renseignUrbaGroupe`, { params: { parcelle } })
+        .then(({ data }) => {
+            return { groupesLibelle: (data?.groupesLibelle || []), adressesPostales: (data?.adressesPostales || []) };
+        });
+};
+
+export const getRenseignUrba = parcelle => {
+    if (renseignUrbaGroupe) {
+        return getRenseignUrbaGroupe(parcelle);
+    }
+    return getRenseignUrbaNonGroupe(parcelle);
+
 };
 
 export const getFIC = (parcelle, onglet) => {
