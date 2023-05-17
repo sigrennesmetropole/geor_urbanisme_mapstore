@@ -44,8 +44,8 @@ const UrbanismeToolbar = ({
 }) => {
     const { activeTool = '', showGFIPanel = false } = urbanisme;
     useEffect(() => {
-        const { cadastrappUrl, layer, urbanismeappUrl, idParcelleKey} = props;
-        onSetUp({ layer, idParcelleKey, cadastrappUrl, urbanismeappUrl });
+        const { cadastrappUrl, layer, urbanismeappUrl, idParcelleKey, urbanismeRenseignGroupe} = props;
+        onSetUp({ layer, idParcelleKey, cadastrappUrl, urbanismeappUrl, urbanismeRenseignGroupe });
     }, [onSetUp]);
 
     const { NRU, ADS } = URBANISME_TOOLS;

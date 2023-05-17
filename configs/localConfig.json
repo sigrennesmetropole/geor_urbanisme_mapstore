@@ -287,7 +287,8 @@
               "helpUrl": "http://docs.georchestra.org/addon_urbanisme/",
               "cadastrappUrl": "/cadastrapp/services",
               "urbanismeappUrl": "/urbanisme",
-              "layer": "urbanisme_parcelle"
+              "layer": "urbanisme_parcelle",
+              "urbanismeRenseignGroupe": false
             }
           },
           {

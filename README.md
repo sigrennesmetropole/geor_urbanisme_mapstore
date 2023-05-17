@@ -40,6 +40,7 @@ For example the plugin allows configuration of the following properties
     "layer": "urbanisme_parcelle",
     "helpUrl": "http://docs.georchestra.org/addon_urbanisme/",
   }
+* *urbanismeRenseignGroupe* - If true, this parameter enables the use of the new entry-point provided by backend project [sigrennesmetropole/addon_urbanisme](https://github.com/sigrennesmetropole/addon_urbanisme) and the generated document displayed urban informations grouped by categories (instead of a list of all urban informations). If false (default) the previous behaviour is kept.
  ```
 
 ### Running geOrchestra
