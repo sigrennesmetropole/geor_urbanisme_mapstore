@@ -33,14 +33,16 @@ For example the plugin allows configuration of the following properties
 * *idParcelleKey* - the attribute name of the feature to use as parcelle id. If missing, `id_parc` will be used.
 * *layer* - The name of the parcelle layer used
 * *helpUrl* - Plugin specific help url for more details on the extension 
+* *urbanismeRenseignGroupe* - If true, this parameter enables the use of the new entry-point provided by backend project [sigrennesmetropole/addon_urbanisme](https://github.com/sigrennesmetropole/addon_urbanisme) and the generated document displayed urban informations grouped by categories (instead of a list of all urban informations). If false (default) the previous behaviour is kept.
  ```
  "cfg": {
     "cadastrappUrl": "/cadastrapp/services",
     "urbanismeappUrl": "/urbanisme",
     "layer": "urbanisme_parcelle",
     "helpUrl": "http://docs.georchestra.org/addon_urbanisme/",
+    "urbanismeRenseignGroupe": "false"
   }
-* *urbanismeRenseignGroupe* - If true, this parameter enables the use of the new entry-point provided by backend project [sigrennesmetropole/addon_urbanisme](https://github.com/sigrennesmetropole/addon_urbanisme) and the generated document displayed urban informations grouped by categories (instead of a list of all urban informations). If false (default) the previous behaviour is kept.
+
  ```
 
 ### Running geOrchestra
