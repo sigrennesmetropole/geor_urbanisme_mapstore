@@ -12,7 +12,7 @@ import { get as getProjection } from 'ol/proj';
 import axios from "@mapstore/libs/ajax";
 import {
     getNearestZoom,
-    getMapfishLayersSpecification
+    getMapfishLayersSpecification, getOlDefaultStyle
 } from "@mapstore/utils/PrintUtils";
 import { getScales, dpi2dpu } from "@mapstore/utils/MapUtils";
 import {reproject, normalizeSRS} from "@mapstore/utils/CoordinatesUtils";
@@ -109,6 +109,20 @@ export const getUrbanismePrintSpec = state => {
         features: urbanismePlotFeaturesSelector(state)
     }, 'selectedPlot')];
 
+    // If a style is not defined in the layer, or if the style property does not exist in the layer, the layer is treated as an annotation layer.
+    // This has the effect of sending an incorrect ms_style attribute (must be 1 or the geometry type) as a param for printing.
+    // This style condition represents a bug introduced in version 2022.02 (cf: PrintUtils.js line 582)
+    clickedPointFeatures.forEach(elt => {
+        const defaultStyle = getOlDefaultStyle(elt, "Polygon");
+        elt.style = {
+            "fillColor": defaultStyle.fillColor,
+            "fillOpacity": defaultStyle.fillOpacity,
+            "color": defaultStyle.strokeColor,
+            "opacity": defaultStyle.strokeOpacity,
+            "weight": defaultStyle.strokeWidth,
+            "lineDash": undefined
+        };
+    });
     const baseLayers = getMapfishLayersSpecification([...layersFiltered], {...spec, projection}, state, "map");
     const vectorLayers = getMapfishLayersSpecification([...clickedPointFeatures], spec, state, "map");
     // Update layerSpec to suit Urbanisme print specification
