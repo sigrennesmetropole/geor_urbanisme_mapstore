@@ -52,6 +52,14 @@ const LandPlanningViewer = ({
         return null;
     };
 
+    const getLibelles = (groupesLibelle, numero) => {
+        const groupes = groupesLibelle.find(groupe => groupe?.groupe_ru === numero);
+        if (groupes) {
+            return (groupes?.libelles || []).join("<br/>");
+        }
+        return "";
+    };
+
     const onSubmitPrint = () => {
         let paramAttributes = {};
         // NRU print param attributes
@@ -69,9 +77,35 @@ const LandPlanningViewer = ({
                 adresseProprio: attributes.adresseProprio || "",
                 dateRU: attributes.dateRU || "",
                 datePCI: attributes.datePCI || "",
-                libelles: (attributes.libelles || []).join("\n\n") || [],
                 outputFilename: "NRU_" + attributes.parcelle
             };
+            if (!!attributes?.groupesLibelle) {
+                paramAttributes = {
+                    ...paramAttributes,
+                    libelles_1: getLibelles(attributes?.groupesLibelle, '1'),
+                    libelles_2: getLibelles(attributes?.groupesLibelle, '2'),
+                    libelles_311: getLibelles(attributes?.groupesLibelle, '311'),
+                    libelles_312: getLibelles(attributes?.groupesLibelle, '312'),
+                    libelles_313: getLibelles(attributes?.groupesLibelle, '313'),
+                    libelles_314: getLibelles(attributes?.groupesLibelle, '314'),
+                    libelles_315: getLibelles(attributes?.groupesLibelle, '315'),
+                    libelles_32: getLibelles(attributes?.groupesLibelle, '32'),
+                    libelles_33: getLibelles(attributes?.groupesLibelle, '33'),
+                    libelles_4: getLibelles(attributes?.groupesLibelle, '4'),
+                    libelles_5: getLibelles(attributes?.groupesLibelle, '5'),
+                    libelles_6: getLibelles(attributes?.groupesLibelle, '6'),
+                    libelles_7: getLibelles(attributes?.groupesLibelle, '7'),
+                    libelles_alertes: getLibelles(attributes?.groupesLibelle, '-999'),
+                    adressesPostales: attributes.adressesPostales.join("; "),
+                    intra: true,
+                    mapImageStream: null
+                };
+            } else {
+                paramAttributes = {
+                    ...paramAttributes,
+                    libelles: (attributes.libelles || []).join("\n\n") || []
+                };
+            }
         } else if (activeTool === ADS) {
             // ADS print param attributes
             const { emptyNom, emptyNumNom } = ADS_DEFAULTS;

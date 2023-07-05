@@ -413,12 +413,12 @@ export const getFeatureInfoEpic = (action$, {getState}) =>
                     getFIC(parcelleId, 1),
                     getRenseignUrbaInfos(codeCommune)
                 ).switchMap(
-                    ([commune, parcelle, lisbelle, propPrio, proprioSurf, dates]) => {
+                    ([commune, parcelle, renseignUrba, propPrio, proprioSurf, dates]) => {
                         return Rx.Observable.of(
                             setAttributes({
                                 ...commune,
                                 ...parcelle,
-                                ...lisbelle,
+                                ...renseignUrba,
                                 ...propPrio,
                                 ...proprioSurf,
                                 ...dates
