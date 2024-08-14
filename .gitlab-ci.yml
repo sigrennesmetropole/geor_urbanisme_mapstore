@@ -5,9 +5,9 @@ stages:
 geor-urbanisme-mapstore-front:build:
   stage: build
   image: node:18.16.1
-  only:
-    refs:
-      - develop
+  rules:
+    - if: $CI_COMMIT_REF_NAME =~ /.*develop.*/
+    - if: $CI_COMMIT_REF_NAME =~ /.*master.*/
   script:
     - git submodule update --init --recursive
     - npm ci
