@@ -14,7 +14,7 @@ geor-urbanisme-mapstore-front:build:
     - npm run ext:build
   artifacts:
     paths :
-      - $CI_PROJECT_DIR/dist/Tabou2.zip
+      - $CI_PROJECT_DIR/dist/Urbanisme.zip
 
 
 geor-urbanisme-mapstore-front:sonar-analysis:
