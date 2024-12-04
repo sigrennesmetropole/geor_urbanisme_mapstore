@@ -1,0 +1,29 @@
+stages:
+  - build
+  - test
+
+geor-urbanisme-mapstore-front:build:
+  stage: build
+  image: node:18.16.1
+  rules:
+    - if: $CI_COMMIT_REF_NAME =~ /.*develop.*/
+    - if: $CI_COMMIT_REF_NAME =~ /.*master.*/
+  script:
+    - git submodule update --init --recursive
+    - npm ci
+    - npm run ext:build
+  artifacts:
+    paths :
+      - $CI_PROJECT_DIR/dist/Urbanisme.zip
+
+
+geor-urbanisme-mapstore-front:sonar-analysis:
+  stage: test
+  image: sonarsource/sonar-scanner-cli
+  script:
+    - >
+      sonar-scanner
+      -Dsonar.host.url=${SONAR_URL}
+      -Dsonar.login=${SONAR_TOKEN}
+      -Dsonar.projectKey=${SONAR_KEY}${CI_PROJECT_NAME}
+

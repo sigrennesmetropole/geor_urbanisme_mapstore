@@ -40,7 +40,7 @@
         "babel-plugin-object-assign": "1.2.1",
         "babel-plugin-react-transform": "2.0.2",
         "babel-plugin-transform-imports": "2.0.0",
-        "copy-webpack-plugin": "5.0.2",
+        "copy-webpack-plugin": "^5.0.0",
         "css-loader": "5.1.2",
         "css-minimizer-webpack-plugin": "3.0.2",
         "denodeify": "1.2.1",
@@ -49,11 +49,11 @@
         "dynamic-public-path-webpack-plugin": "1.0.4",
         "escope": "3.2.0",
         "eslint": "7.8.1",
-        "eslint-plugin-import": "2.20.2",
+        "eslint-plugin-import": "2.29.1",
         "eslint-plugin-no-only-tests": "2.3.1",
         "eslint-plugin-react": "3.3.2",
         "expect": "1.20.1",
-        "file-loader": "2.0.0",
+        "file-loader": "^5.0.0",
         "glob": "7.1.1",
         "html-loader": "2.1.2",
         "html-webpack-plugin": "5.2.0",
@@ -81,7 +81,7 @@
         "postcss-loader": "6.1.0",
         "postcss-prefix-selector": "1.10.0",
         "process": "0.11.10",
-        "progress-bar-webpack-plugin": "1.12.1",
+        "progress-bar-webpack-plugin": "2.1.0",
         "raw-loader": "0.5.1",
         "react-motion": "0.5.0",
         "react-transition-group": "1.1.3",
@@ -101,9 +101,10 @@
         "webpack-bundle-size-analyzer": "2.0.2",
         "webpack-cli": "4.10.0",
         "webpack-dev-server": "3.11.0",
-        "zip-webpack-plugin": "3.0.0"
+        "zip-webpack-plugin": "^4.0.0"
     },
     "dependencies": {
+        "cross-env": "^7.0.3",
         "mapstore2": "file:MapStore2"
     },
     "scripts": {
@@ -112,7 +113,7 @@
         "start": "webpack serve --color --port 8081 --hot --inline --content-base .",
         "ext:startapp": "webpack serve --progress --color --port 8091 --hot --inline --content-base . --config build/extension/module.app.webpack.config.js",
         "ext:start": "webpack serve --progress --color --port 8082 --hot --inline --config build/extension/webpack.config.js",
-        "ext:build": "rimraf ./dist && mkdirp ./dist && webpack --progress  --color --config build/extension/prod-webpack.config.js",
+        "ext:build": "rimraf ./dist && mkdirp ./dist && cross-env NODE_OPTIONS=--openssl-legacy-provider webpack --progress  --color --config build/extension/prod-webpack.config.js",
         "test": "karma start ./karma.conf.single-run.js",
         "continuoustest": "karma start ./karma.conf.continuous-test.js",
         "lint": "eslint js --ext .jsx,.js",
