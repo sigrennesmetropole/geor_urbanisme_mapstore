@@ -20,7 +20,6 @@ import {
     closeIdentify,
     errorFeatureInfo,
     exceptionsFeatureInfo,
-    getVectorInfo,
     hideMapinfoMarker,
     LOAD_FEATURE_INFO,
     loadFeatureInfo,
@@ -550,7 +549,7 @@ export const getUrbanismeFeatureInfoOnFeatureInfoClick = (action$, {
                             .catch((e) => Rx.Observable.of(errorFeatureInfo(reqId, e.data || e.statusText || e.status, requestParams, lMetaData)))
                             .startWith(newMapInfoRequest(reqId, param));
                     }
-                    return Rx.Observable.of(getVectorInfo(layer, request, metadata, queryableLayers));
+                    return Rx.Observable.empty();
                 });
             // NOTE: multiSelection is inside the event
             // TODO: move this flag in the application state
