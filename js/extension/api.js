@@ -54,6 +54,7 @@ export const getParcelle = code => {
                         ccosec,
                         dnupla: numero,
                         dnvoiri,
+                        dindic,
                         cconvo,
                         dvoilib,
                         dcntpa: contenanceDGFiP
@@ -65,9 +66,9 @@ export const getParcelle = code => {
                 } else {
                     parcelleObj.codeSection = ccosec;
                 }
-                if (dnvoiri || cconvo || dvoilib) {
+                if (dnvoiri || cconvo || dvoilib || dindic) {
                     parcelleObj.adresseCadastrale =
-            dnvoiri + " " + cconvo + " " + dvoilib;
+                    `${dnvoiri}${dindic.trim() ? ` ${dindic}` : ""}` + " "  + cconvo + " " + dvoilib;
                 } else {
                     parcelleObj.adresseCadastrale = "";
                 }
