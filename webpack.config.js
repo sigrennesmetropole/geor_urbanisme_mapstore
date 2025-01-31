@@ -33,5 +33,5 @@ const cfg = buildConfig(
     proxyConfig
 );
 // stream are needed here in code
-cfg.resolve.fallback = {timers: false};
+cfg.resolve.fallback = {timers: false, http: false, https: false, zlib: false};
 module.exports = cfg;

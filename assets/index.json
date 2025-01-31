@@ -7,7 +7,7 @@
       "glyph": "info-sign",
       "docUrl": "https://github.com/sigrennesmetropole/geor_urbanisme_mapstore",
       "defaultConfig": {
-        "helpUrl": "http://docs.georchestra.org/addon_urbanisme/",
+        "helpUrl": "https://docs.georchestra.org/mapstore2-urbanisme/fr/latest/",
         "cadastrappUrl": "/cadastrapp/services",
         "urbanismeappUrl": "/urbanisme",
         "layer": "urbanisme_parcelle",

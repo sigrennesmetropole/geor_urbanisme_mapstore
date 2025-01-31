@@ -15,17 +15,17 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [14.x]
+        node-version: [16.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
     - uses: actions/checkout@v2
       with:
         submodules: 'true'
-    - name: Use Node.js 14.x
+    - name: Use Node.js 16.x
       uses: actions/setup-node@v2
       with:
-        node-version: '14.x'
+        node-version: '16.x'
      ############
      # CACHING
      ##########
@@ -40,7 +40,7 @@ jobs:
     - run: npm test
     - run: npm run ext:build
     - name: 'Upload Artifact'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: Artifacts
         path: dist/Urbanisme.zip
