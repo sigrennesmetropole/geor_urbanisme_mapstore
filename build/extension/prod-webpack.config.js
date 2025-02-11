@@ -7,6 +7,7 @@ const ZipPlugin = require('zip-webpack-plugin');
 const {name} = require('../../config');
 const { plugins: commonsPlugins, ...commons} = require('./commons');
 
+// the build configuration for production allow to create the final zip file, compressed accordingly
 const plugins = [
     new CopyPlugin({
         patterns: [
@@ -22,7 +23,9 @@ const plugins = [
             }
             // other files have to be placed in the root, with the same name
             return path.basename(assetPath);
-        }    }),    ...commonsPlugins];
+        }
+    }),
+    ...commonsPlugins];
 
 // Temporary TODO: Has to be updated in createExtensionWebpackConfig
 const fileLoader = {
