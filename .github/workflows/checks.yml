@@ -5,9 +5,9 @@ name: Node.js CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, 'V2.*' ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, 'V2.*' ]
 
 jobs:
   build:
@@ -40,7 +40,7 @@ jobs:
     - run: npm test
     - run: npm run ext:build
     - name: 'Upload Artifact'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v4.6.1
       with:
         name: Artifacts
         path: dist/Urbanisme.zip
