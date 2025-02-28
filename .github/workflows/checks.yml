@@ -44,4 +44,3 @@ jobs:
       with:
         name: Artifacts
         path: dist/Urbanisme.zip
-        retention-days: 5
