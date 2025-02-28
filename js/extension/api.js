@@ -68,7 +68,7 @@ export const getParcelle = code => {
                 }
                 if (dnvoiri || cconvo || dvoilib || dindic) {
                     parcelleObj.adresseCadastrale =
-                    `${dnvoiri}${dindic.trim() ? ` ${dindic}` : ""}` + " "  + cconvo + " " + dvoilib;
+                        `${dnvoiri}` + "" + `${dindic ?? ""}` + " "  + cconvo + " " + dvoilib;
                 } else {
                     parcelleObj.adresseCadastrale = "";
                 }

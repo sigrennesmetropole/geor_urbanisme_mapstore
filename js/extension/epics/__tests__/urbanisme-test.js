@@ -279,7 +279,7 @@ describe('Urbanisme EPICS', () => {
     it('getFeatureInfoEpic load feature info NRU tool OLD', (done) => {
         mockAxios.onGet(`${CADASTRAPP_URL}/getCommune`).reply(200, [{libcom_min: "min"}]);
         mockAxios.onGet(`${CADASTRAPP_URL}/getParcelle`).reply(200, [{parcelle: "parcelle", ccopre: "ccopre",
-            ccosec: "ccosec", dnupla: "dnupla", dnvoiri: "dnvoiri", cconvo: "cconvo", dvoilib: "dvoilib", dcntpa: "dcntpa"}]);
+            ccosec: "ccosec", dnupla: "dnupla", dnvoiri: "dnvoiri", dindic: "dindic", cconvo: "cconvo", dvoilib: "dvoilib", dcntpa: "dcntpa"}]);
         mockAxios.onGet(`${URBANISMEAPP_URL}/renseignUrba`).reply(200, {libelles: [{libelle: "Test"}]});
         mockAxios.onGet(`${CADASTRAPP_URL}/getFIC` ).reply((config)=>{
             if (config.params.onglet === 0) return [200, [{surfc: "surfc"}]];
@@ -296,7 +296,7 @@ describe('Urbanisme EPICS', () => {
             urbanisme: { activeTool: "NRU"},
             additionalLayers: [urbanismeLayer]
         };
-        const attributes = {"commune": "min", "parcelle": "parcelle", "numero": "dnupla", "contenanceDGFiP": "dcntpa", "codeSection": "ccopreccosec", "adresseCadastrale": "dnvoiri cconvo dvoilib", "libelles": ["Test"], "nomProprio": "", "codeProprio": "codeProprio", "adresseProprio": "  ", "surfaceSIG": "surfc", "datePCI": "0/10/11", "dateRU": "06/2020"};
+        const attributes = {"commune": "min", "parcelle": "parcelle", "numero": "dnupla", "contenanceDGFiP": "dcntpa", "codeSection": "ccopreccosec", "adresseCadastrale": "dnvoiridindic cconvo dvoilib", "libelles": ["Test"], "nomProprio": "", "codeProprio": "codeProprio", "adresseProprio": "  ", "surfaceSIG": "surfc", "datePCI": "0/10/11", "dateRU": "06/2020"};
         testEpic(
             addTimeoutEpic(getFeatureInfoEpic, 60),
             3,
