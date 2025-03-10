@@ -68,7 +68,7 @@ export const getParcelle = code => {
                 }
                 if (dnvoiri || cconvo || dvoilib || dindic) {
                     parcelleObj.adresseCadastrale =
-                    `${dnvoiri}${dindic.trim() ? ` ${dindic}` : ""}` + " "  + cconvo + " " + dvoilib;
+                    `${dnvoiri}` + "" + `${dindic ?? ""}` + " "  + cconvo + " " + dvoilib;
                 } else {
                     parcelleObj.adresseCadastrale = "";
                 }
@@ -123,7 +123,7 @@ export const getFIC = (parcelle, onglet) => {
                     dlign6 = ""
                 } = record || {};
                 const adresseProprio =
-          dlign4.trim() + " " + dlign5.trim() + " " + dlign6.trim();
+          (dlign4 ? dlign4.trim() : "") + " " + (dlign5 ? dlign5.trim() : "") + " " + (dlign6 ? dlign6.trim() : "");
                 return { ...parcelleObj, codeProprio, adresseProprio };
             }
             return { surfaceSIG: record?.surfc || "" };
