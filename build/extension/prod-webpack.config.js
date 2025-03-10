@@ -9,12 +9,10 @@ const { plugins: commonsPlugins, ...commons} = require('./commons');
 
 // the build configuration for production allow to create the final zip file, compressed accordingly
 const plugins = [
-    new CopyPlugin({
-        patterns: [
-            { from: path.resolve(__dirname, "..", "..", "assets", "translations"), to: "translations" },
-            { from: path.resolve(__dirname, "..", "..", "assets", "index.json"), to: "index.json" }
-        ]
-    }),
+    new CopyPlugin([
+        { from: path.resolve(__dirname, "..", "..", "assets", "translations"), to: "translations" },
+        { from: path.resolve(__dirname, "..", "..", "assets", "index.json"), to: "index.json" }
+    ]),
     new ZipPlugin({
         filename: `${name}.zip`,
         pathMapper: assetPath => {
@@ -25,7 +23,8 @@ const plugins = [
             return path.basename(assetPath);
         }
     }),
-    ...commonsPlugins];
+    ...commonsPlugins
+];
 
 // Temporary TODO: Has to be updated in createExtensionWebpackConfig
 const fileLoader = {
