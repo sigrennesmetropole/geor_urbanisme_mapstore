@@ -54,6 +54,7 @@ export const getParcelle = code => {
                         ccosec,
                         dnupla: numero,
                         dnvoiri,
+                        dindic,
                         cconvo,
                         dvoilib,
                         dcntpa: contenanceDGFiP
@@ -65,9 +66,9 @@ export const getParcelle = code => {
                 } else {
                     parcelleObj.codeSection = ccosec;
                 }
-                if (dnvoiri || cconvo || dvoilib) {
+                if (dnvoiri || cconvo || dvoilib || dindic) {
                     parcelleObj.adresseCadastrale =
-            dnvoiri + " " + cconvo + " " + dvoilib;
+                    `${dnvoiri}` + "" + `${dindic ?? ""}` + " "  + cconvo + " " + dvoilib;
                 } else {
                     parcelleObj.adresseCadastrale = "";
                 }
@@ -122,7 +123,7 @@ export const getFIC = (parcelle, onglet) => {
                     dlign6 = ""
                 } = record || {};
                 const adresseProprio =
-          dlign4.trim() + " " + dlign5.trim() + " " + dlign6.trim();
+          (dlign4 ? dlign4.trim() : "") + " " + (dlign5 ? dlign5.trim() : "") + " " + (dlign6 ? dlign6.trim() : "");
                 return { ...parcelleObj, codeProprio, adresseProprio };
             }
             return { surfaceSIG: record?.surfc || "" };
