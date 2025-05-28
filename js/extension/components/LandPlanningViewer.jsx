@@ -98,7 +98,7 @@ const LandPlanningViewer = ({
                     libelles_alertes: getLibelles(attributes?.groupesLibelle, '-999'),
                     adressesPostales: attributes.adressesPostales.join("; "),
                     intra: true,
-                    mapImageStream: null
+                    mapImageStream: ""
                 };
             } else {
                 paramAttributes = {
