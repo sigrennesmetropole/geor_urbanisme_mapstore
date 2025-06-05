@@ -1,0 +1,35 @@
+variables:
+  OSS_MVN_DISABLE: "true"
+
+include:
+  - project: 'boost/template-ci/pipelines/common'
+    file: 'securite/oss-index/oss-index-template.yml'
+
+stages:
+  - push_to_remote
+  - test
+  - sast
+
+sonar-analysis:
+  stage: test
+  image: sonarsource/sonar-scanner-cli
+  script:
+    - >
+      sonar-scanner
+      -Dsonar.host.url=${SONAR_URL}
+      -Dsonar.login=${SONAR_TOKEN}
+      -Dsonar.projectKey=${SONAR_KEY}${CI_PROJECT_NAME}
+
+push_to_remote:
+  stage: push_to_remote
+  only:
+    - master
+  variables:
+    BRANCH_NAME: "master"
+  script:
+     - apk add --no-cache git
+     - git remote add schapi_remote $REMOTE_URL
+     - git checkout -b $BRANCH_NAME
+     - git push --force schapi_remote $BRANCH_NAME:$BRANCH_NAME
+     - git push --force --tags schapi_remote
+  when: on_success
