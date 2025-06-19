@@ -79,7 +79,13 @@ const LandPlanningViewer = ({
                 datePCI: attributes.datePCI || "",
                 outputFilename: "NRU_" + attributes.parcelle
             };
+            if (attributes.nruPrintLayout) {
+                paramAttributes = {
+                    ...paramAttributes, layout: attributes.nruPrintLayout
+                };
+            }
             if (!!attributes?.groupesLibelle) {
+                const typeDoc = [...new Set(attributes?.groupesLibelle?.flatMap(item => item.type))].join(', ');
                 paramAttributes = {
                     ...paramAttributes,
                     libelles_1: getLibelles(attributes?.groupesLibelle, '1'),
@@ -97,6 +103,7 @@ const LandPlanningViewer = ({
                     libelles_7: getLibelles(attributes?.groupesLibelle, '7'),
                     libelles_alertes: getLibelles(attributes?.groupesLibelle, '-999'),
                     adressesPostales: attributes.adressesPostales.join("; "),
+                    typeDocument: typeDoc || "",
                     intra: true,
                     mapImageStream: ""
                 };

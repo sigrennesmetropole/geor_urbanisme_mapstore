@@ -16,6 +16,7 @@ import Message from "@mapstore/components/I18N/Message";
  * @param {object} props object containing attributes of NRU data
  */
 const NRUInfo = (props) => {
+    const type = [...new Set(props?.groupesLibelle?.flatMap(item => item.type))].join(', ');
     const tableData = [
         {
             label: <Message msgId={"urbanisme.nru.section"}/>,
@@ -52,6 +53,10 @@ const NRUInfo = (props) => {
         {
             label: <Message msgId={"urbanisme.nru.year"}/>,
             value: props.datePCI || ''
+        },
+        {
+            label: <Message msgId={"urbanisme.nru.documents"}/>,
+            value: type || ''
         }
     ];
 

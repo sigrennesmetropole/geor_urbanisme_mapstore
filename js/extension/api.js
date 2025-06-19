@@ -86,6 +86,16 @@ export const getRenseignUrbaNonGroupe = parcelle => {
         });
 };
 
+export const getPrintTemplate = typesDocument => {
+    const typeParams = typesDocument.map(v => `type=${v}`).join('&');
+    return axios
+        .get(`${urbanismeURL}/templates?${typeParams}`)
+        .then(( template ) => {
+            console.log(template?.data);
+            return template?.data;
+        });
+};
+
 
 export const getRenseignUrbaGroupe = parcelle => {
     return axios
