@@ -24,7 +24,8 @@
                 "account": "Compte propriétaire",
                 "owner": "Propriétaire(s)",
                 "productionDate": "Date de production des RU",
-                "year": "Millésime du cadastre"
+                "year": "Millésime du cadastre",
+                "documents": "Documents d'urbanisme"
             },
             "landPlanning" : {
                 "print": "Impression",
