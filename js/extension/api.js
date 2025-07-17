@@ -91,7 +91,6 @@ export const getPrintTemplate = typesDocument => {
     return axios
         .get(`${urbanismeURL}/templates?${typeParams}`)
         .then(( template ) => {
-            console.log(template?.data);
             return template?.data;
         });
 };
