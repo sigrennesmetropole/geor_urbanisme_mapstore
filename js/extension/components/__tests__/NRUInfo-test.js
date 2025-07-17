@@ -42,7 +42,7 @@ describe('NRUInfo', () => {
     it('test render NRUInfo with parcelle table', () => {
         const props = {commune: "Commune Text", codeSection: "code", numero: "1", adresseCadastrale: "address",
             contenanceDGFiP: "1", surfaceSIG: "1", codeProprio: "code1",
-            nomProprio: "1pro", dateRU: "2020/08/02", datePCI: "06/2020"};
+            nomProprio: "1pro", dateRU: "2020/08/02", datePCI: "06/2020", type: ""};
         ReactDOM.render(<NRUInfo {...props}/>, document.getElementById("container"));
         const container = document.getElementById('container');
         expect(container).toBeTruthy();

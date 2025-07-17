@@ -72,7 +72,7 @@ import {
     getCommune,
     getConfiguration,
     getFIC,
-    getParcelle,
+    getParcelle, getPrintTemplate,
     getQuartier,
     getRenseignUrba,
     getRenseignUrbaInfos
@@ -413,16 +413,27 @@ export const getFeatureInfoEpic = (action$, {getState}) =>
                     getRenseignUrbaInfos(codeCommune)
                 ).switchMap(
                     ([commune, parcelle, renseignUrba, propPrio, proprioSurf, dates]) => {
-                        return Rx.Observable.of(
-                            setAttributes({
-                                ...commune,
-                                ...parcelle,
-                                ...renseignUrba,
-                                ...propPrio,
-                                ...proprioSurf,
-                                ...dates
-                            })
-                        );
+                        // Nouvelle requête HTTP avec les données de `renseignementUrba`
+                        const type = [...new Set(renseignUrba?.groupesLibelle?.flatMap(item => item.type))].join(', ');
+
+                        return Rx.Observable.from(getPrintTemplate([type])).switchMap((nruPrintLayout) => {
+                            return Rx.Observable.of(
+                                setAttributes({
+                                    ...commune,
+                                    ...parcelle,
+                                    ...renseignUrba,
+                                    ...propPrio,
+                                    ...proprioSurf,
+                                    ...dates,
+                                    nruPrintLayout // Ajout de l'attribut pour le layout
+                                })
+                            );
+                        }).catch((err) => {
+                            console.error("Error while adding extra data: ", err);
+                            return Rx.Observable.of(
+                                error({title: "Error", message: "Impossible to load extra data"})
+                            );
+                        });
                     }
                 );
             } else if (activeTool === URBANISME_TOOLS.ADS) {

@@ -287,6 +287,9 @@ describe('Urbanisme EPICS', () => {
         });
         mockAxios.onGet('/urbanisme/renseignUrbaInfos').reply(200, { date_pci: '2020/10/11', date_ru: '06/2020'});
 
+        // Mock pour getPrintTemplate - URL avec paramètre type
+        mockAxios.onGet(new RegExp(`${URBANISMEAPP_URL}/templates\\?type=.*`)).reply(200, {template: "nru_template"});
+
         const urbanismeLayer = {id: URBANISME_RASTER_LAYER_ID, name: "URBANISME_PARCELLE"};
         const layerMetaData = {
             features: [{id: "urbanisme_1", geometry: {type: "Polygon", coordinates: [[-1, 1], [-2, 2], [-3, 3], [-4, 4]]}, properties: {id_parc: "350238000BM0027"}}],
@@ -296,7 +299,22 @@ describe('Urbanisme EPICS', () => {
             urbanisme: { activeTool: "NRU"},
             additionalLayers: [urbanismeLayer]
         };
-        const attributes = {"commune": "min", "parcelle": "parcelle", "numero": "dnupla", "contenanceDGFiP": "dcntpa", "codeSection": "ccopreccosec", "adresseCadastrale": "dnvoiridindic cconvo dvoilib", "libelles": ["Test"], "nomProprio": "", "codeProprio": "codeProprio", "adresseProprio": "  ", "surfaceSIG": "surfc", "datePCI": "0/10/11", "dateRU": "06/2020"};
+        const attributes = {
+            "commune": "min",
+            "parcelle": "parcelle",
+            "numero": "dnupla",
+            "contenanceDGFiP": "dcntpa",
+            "codeSection": "ccopreccosec",
+            "adresseCadastrale": "dnvoiridindic cconvo dvoilib",
+            "libelles": ["Test"],
+            "surfaceSIG": "surfc",
+            "nomProprio": "",
+            "codeProprio": "codeProprio",
+            "adresseProprio": "  ",
+            "datePCI": "0/10/11",
+            "dateRU": "06/2020",
+            "nruPrintLayout": {template: "nru_template"}
+        };
         testEpic(
             addTimeoutEpic(getFeatureInfoEpic, 60),
             3,
@@ -334,6 +352,9 @@ describe('Urbanisme EPICS', () => {
         });
         mockAxios.onGet('/urbanisme/renseignUrbaInfos').reply(200, { date_pci: '2020/10/11', date_ru: '06/2020'});
 
+        // Mock pour getPrintTemplate - URL avec paramètre type
+        mockAxios.onGet(new RegExp(`${URBANISMEAPP_URL}/templates\\?type=.*`)).reply(200, {template: "nru_template"});
+
         const urbanismeLayer = layersList[0].options;
         const layerMetaData = {
             features: [{id: "urbanisme_1", type: "Feature", geometry: {type: "Polygon", coordinates: [[-1, 1], [-2, 2], [-3, 3], [-4, 4]]}, properties: {id_parc: "350238000BM0027"}}],
@@ -343,7 +364,12 @@ describe('Urbanisme EPICS', () => {
             urbanisme: { activeTool: "NRU"},
             additionalLayers: [urbanismeLayer]
         };
-        const attributes = {"datePCI": "0/10/11", "dateRU": "06/2020", libelles: []};
+        const attributes = {
+            libelles: [],
+            "datePCI": "0/10/11",
+            "dateRU": "06/2020",
+            "nruPrintLayout": {template: "nru_template"}
+        };
         testEpic(
             addTimeoutEpic(getFeatureInfoEpic, 60),
             3,
