@@ -284,7 +284,7 @@
           {
             "name": "Urbanisme",
             "cfg": {
-              "helpUrl": "https://georchestra-mapstore2-urbanisme.readthedocs.io/fr/latest/",
+              "helpUrl": "https://docs.georchestra.org/mapstore2-urbanisme/fr/latest/",
               "cadastrappUrl": "/cadastrapp/services",
               "urbanismeappUrl": "/urbanisme",
               "layer": "urbanisme_parcelle",
