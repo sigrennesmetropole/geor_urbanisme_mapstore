@@ -39,7 +39,7 @@ For example the plugin allows configuration of the following properties
     "cadastrappUrl": "/cadastrapp/services",
     "urbanismeappUrl": "/urbanisme",
     "layer": "urbanisme_parcelle",
-    "helpUrl": "https://georchestra-mapstore2-urbanisme.readthedocs.io/fr/latest/",
+    "helpUrl": "https://docs.georchestra.org/mapstore2-urbanisme/fr/latest/",
     "urbanismeRenseignGroupe": "false"
   }
 
