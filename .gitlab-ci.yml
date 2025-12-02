@@ -9,9 +9,9 @@ include:
       ssc_lock_file: "package-lock.json"
 
 stages:
+  - sast
   - push_to_remote
   - test
-  - sast
 
 sonar-analysis:
   stage: test
