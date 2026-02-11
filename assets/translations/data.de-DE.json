@@ -20,6 +20,7 @@
                 "plotNumber": "Grundstücksnummer",
                 "address": "Katasteradresse",
                 "capacity": "DGFiP-Kapazität (m²)",
+                "legalAddresses": "Rechtsadressen",
                 "area": "Berechnete Fläche (m²)",
                 "account": "Besitzerkonto",
                 "owner": "Besitzer",

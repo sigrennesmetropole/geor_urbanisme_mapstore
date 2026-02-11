@@ -8,16 +8,25 @@
 
 import axios from "@mapstore/libs/ajax";
 import { isEmpty } from "lodash";
-import {DEFAULT_CADASTRAPP_URL, DEFAULT_URBANISMEAPP_URL} from "@js/extension/constants";
+import proj4 from "proj4";
+import {DEFAULT_CADASTRAPP_URL, DEFAULT_URBANISMEAPP_URL, DEFAULT_REVERSE_GEOCODING_URL, DEFAULT_REVERSE_GEOCODING_FROM_CRS, DEFAULT_REVERSE_GEOCODING_TO_CRS} from "@js/extension/constants";
 
 let cadastrappURL;
 let urbanismeURL;
 let renseignUrbaGroupe;
+let reverseGeocodingURL;
+let reverseGeocodingFromCrs;
+let reverseGeocodingToCrs;
+let reverseGeocodingParams;
 
 export const setAPIURL = (config) => {
     cadastrappURL = config?.cadastrappUrl || DEFAULT_CADASTRAPP_URL;
     urbanismeURL = config?.urbanismeappUrl || DEFAULT_URBANISMEAPP_URL;
     renseignUrbaGroupe = !!config?.urbanismeRenseignGroupe;
+    reverseGeocodingURL = config?.reverseGeocodingUrl || DEFAULT_REVERSE_GEOCODING_URL;
+    reverseGeocodingFromCrs = config?.reverseGeocodingFromCrs || DEFAULT_REVERSE_GEOCODING_FROM_CRS;
+    reverseGeocodingToCrs = config?.reverseGeocodingToCrs || DEFAULT_REVERSE_GEOCODING_TO_CRS;
+    reverseGeocodingParams = config?.reverseGeocodingParams || {};
 };
 
 /* eslint-disable camelcase */
@@ -188,6 +197,54 @@ export const getQuartier = parcelle => {
             }
             return { num_nom: data.numnom, id_parcelle: data.parcelle };
         });
+};
+
+export const getReverseGeocoding = geometry => {
+    if (!geometry) {
+        return Promise.resolve(null);
+    }
+    const reprojectCoords = coords => coords.map(([x, y]) => proj4(reverseGeocodingFromCrs || DEFAULT_REVERSE_GEOCODING_FROM_CRS, reverseGeocodingToCrs || DEFAULT_REVERSE_GEOCODING_TO_CRS, [x, y]));
+    
+    const normalizeGeometry = geom => {
+        if (!geom || geom.type !== "Polygon" || !Array.isArray(geom.coordinates)) {
+            return geom;
+        }
+        if (!reverseGeocodingFromCrs || !reverseGeocodingToCrs || reverseGeocodingFromCrs === reverseGeocodingToCrs ) {
+            return geom;
+        }
+        return {
+            ...geom,
+            coordinates: geom.coordinates.map(ring => reprojectCoords(ring))
+        };
+    };
+    const request = geom => {
+        const normalizedGeom = normalizeGeometry(geom);
+        const defaultParams = {
+            index: "address",
+            limit: 10,
+            returntruegeometry: false
+        };
+        const requestParams = {
+            ...defaultParams,
+            ...(reverseGeocodingParams || {}),
+            searchgeom: JSON.stringify(normalizedGeom)
+        };
+        return axios
+            .get(reverseGeocodingURL || DEFAULT_REVERSE_GEOCODING_URL, {
+                params: requestParams
+            })
+            .then(({ data }) => data);
+    }
+
+    if (geometry.type === "MultiPolygon" && Array.isArray(geometry.coordinates)) {
+        const polygons = geometry.coordinates.map(coords => ({
+            type: "Polygon",
+            coordinates: coords
+        }));
+        return Promise.all(polygons.map(request));
+    }
+
+    return request(geometry);
 };
 
 export const printPDF = (params) => {

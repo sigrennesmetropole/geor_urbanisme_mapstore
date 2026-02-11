@@ -19,6 +19,7 @@
                 "section": "Sezione",
                 "plotNumber": "Numero di trama",
                 "address": "Indirizzo catastale",
+                "legalAddresses": "Indirizzi legali",
                 "capacity": "Capacità DGFiP (m²)",
                 "area": "Area calcolata (m²)",
                 "account": "Account proprietario",
