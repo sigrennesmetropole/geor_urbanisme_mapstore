@@ -19,6 +19,7 @@
                 "section": "Section",
                 "plotNumber": "Plot number",
                 "address": "Cadastral address",
+                "legalAddresses": "Legal addresses",
                 "capacity": "DGFiP capacity (m²)",
                 "area": "Calculated area (m²)",
                 "account": "Owner account",

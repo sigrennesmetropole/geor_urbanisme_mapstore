@@ -19,6 +19,7 @@
                 "section": "Section",
                 "plotNumber": "Numéro parcelle",
                 "address": "Adresse cadastrale",
+                "legalAddresses": "Adresses légales",
                 "capacity": "Contenance DGFiP (m²)",
                 "area": "Surface calculée (m²)",
                 "account": "Compte propriétaire",

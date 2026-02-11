@@ -12,6 +12,9 @@ export const CONTROL_NAME = "urbanisme";
 export const DEFAULT_URBANISME_LAYER = "urbanisme_parcelle";
 export const DEFAULT_CADASTRAPP_URL = "/cadastrapp/services";
 export const DEFAULT_URBANISMEAPP_URL = "/urbanisme";
+export const DEFAULT_REVERSE_GEOCODING_URL = "https://data.geopf.fr/geocodage/reverse";
+export const DEFAULT_REVERSE_GEOCODING_FROM_CRS = "EPSG:3857";
+export const DEFAULT_REVERSE_GEOCODING_TO_CRS = "EPSG:4326";
 export const URBANISME_TOOLS = {
     NRU: "NRU",
     ADS: "ADS"

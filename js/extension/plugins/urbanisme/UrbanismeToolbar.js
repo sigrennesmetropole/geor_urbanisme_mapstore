@@ -44,8 +44,8 @@ const UrbanismeToolbar = ({
 }) => {
     const { activeTool = '', showGFIPanel = false } = urbanisme;
     useEffect(() => {
-        const { cadastrappUrl, layer, urbanismeappUrl, idParcelleKey, urbanismeRenseignGroupe} = props;
-        onSetUp({ layer, idParcelleKey, cadastrappUrl, urbanismeappUrl, urbanismeRenseignGroupe });
+        const { cadastrappUrl, layer, urbanismeappUrl, idParcelleKey, urbanismeRenseignGroupe, reverseGeocodingUrl, reverseGeocodingFromCrs, reverseGeocodingToCrs, reverseGeocodingParams } = props;
+        onSetUp({ layer, idParcelleKey, cadastrappUrl, urbanismeappUrl, urbanismeRenseignGroupe, reverseGeocodingUrl, reverseGeocodingFromCrs, reverseGeocodingToCrs, reverseGeocodingParams });
     }, [onSetUp]);
 
     const { NRU, ADS } = URBANISME_TOOLS;
