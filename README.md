@@ -34,13 +34,25 @@ For example the plugin allows configuration of the following properties
 * *layer* - The name of the parcelle layer used
 * *helpUrl* - Plugin specific help url for more details on the extension 
 * *urbanismeRenseignGroupe* - If true, this parameter enables the use of the new entry-point provided by backend project [sigrennesmetropole/addon_urbanisme](https://github.com/sigrennesmetropole/addon_urbanisme) and the generated document displayed urban informations grouped by categories (instead of a list of all urban informations). If false (default) the previous behaviour is kept.
+* *reverseGeocodingUrl* - Reverse geocoding service URL used to retrieve addresses from geometry (default: `https://data.geopf.fr/geocodage/reverse`).
+* *reverseGeocodingFromCrs* - CRS of the geometry sent to the reverse geocoding service (default: `EPSG:3857`).
+* *reverseGeocodingToCrs* - CRS expected by the reverse geocoding service (default: `EPSG:4326`).
+* *reverseGeocodingParams* - Additional query parameters for reverse geocoding (merged with defaults like `index`, `limit`, `returntruegeometry`).
  ```
  "cfg": {
     "cadastrappUrl": "/cadastrapp/services",
     "urbanismeappUrl": "/urbanisme",
     "layer": "urbanisme_parcelle",
     "helpUrl": "http://docs.georchestra.org/addon_urbanisme/",
-    "urbanismeRenseignGroupe": "false"
+        "urbanismeRenseignGroupe": false,
+        "reverseGeocodingUrl": "https://data.geopf.fr/geocodage/reverse",
+        "reverseGeocodingFromCrs": "EPSG:3857",
+        "reverseGeocodingToCrs": "EPSG:4326",
+        "reverseGeocodingParams": {
+            "index": "address",
+            "limit": 10,
+            "returntruegeometry": false
+        }
   }
 
  ```

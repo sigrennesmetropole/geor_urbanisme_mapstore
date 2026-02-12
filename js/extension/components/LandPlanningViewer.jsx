@@ -60,6 +60,17 @@ const LandPlanningViewer = ({
         return "";
     };
 
+    const getLegalAddresses = (reverseGeocoding) => {
+        const reverseFeatures = Array.isArray(reverseGeocoding)
+            ? reverseGeocoding.flatMap(response => response?.features || [])
+            : (reverseGeocoding?.features || []);
+        return [...new Set(
+            reverseFeatures
+                .map(feature => feature?.properties?.name)
+                .filter(Boolean)
+        )];
+    };
+
     const onSubmitPrint = () => {
         let paramAttributes = {};
         // NRU print param attributes
@@ -86,6 +97,12 @@ const LandPlanningViewer = ({
             }
             if (!!attributes?.groupesLibelle) {
                 const typeDoc = [...new Set(attributes?.groupesLibelle?.flatMap(item => item.type))].join(', ');
+                const legalAddresses = getLegalAddresses(attributes?.reverseGeocoding);
+                const postalAddresses = (attributes?.adressesPostales || []).join("<br/>");
+                const legalAddressesHtml = (legalAddresses || []).join("<br/>");
+                const mergedAddresses = [postalAddresses, legalAddressesHtml]
+                    .filter(value => !!value)
+                    .join("<br/>");
                 paramAttributes = {
                     ...paramAttributes,
                     libelles_1: getLibelles(attributes?.groupesLibelle, '1'),
@@ -102,7 +119,7 @@ const LandPlanningViewer = ({
                     libelles_6: getLibelles(attributes?.groupesLibelle, '6'),
                     libelles_7: getLibelles(attributes?.groupesLibelle, '7'),
                     libelles_alertes: getLibelles(attributes?.groupesLibelle, '-999'),
-                    adressesPostales: attributes.adressesPostales.join("; "),
+                    adressesPostales: mergedAddresses,
                     typeDocument: typeDoc || "",
                     intra: true,
                     mapImageStream: ""
