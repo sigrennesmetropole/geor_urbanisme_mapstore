@@ -34,13 +34,25 @@ For example the plugin allows configuration of the following properties
 * *layer* - The name of the parcelle layer used
 * *helpUrl* - Plugin specific help url for more details on the extension 
 * *urbanismeRenseignGroupe* - If true, this parameter enables the use of the new entry-point provided by backend project [sigrennesmetropole/addon_urbanisme](https://github.com/sigrennesmetropole/addon_urbanisme) and the generated document displayed urban informations grouped by categories (instead of a list of all urban informations). If false (default) the previous behaviour is kept.
+* *reverseGeocodingUrl* - Reverse geocoding service URL used to retrieve addresses from geometry (default: `https://data.geopf.fr/geocodage/reverse`).
+* *reverseGeocodingFromCrs* - CRS of the geometry sent to the reverse geocoding service (default: `EPSG:3857`).
+* *reverseGeocodingToCrs* - CRS expected by the reverse geocoding service (default: `EPSG:4326`).
+* *reverseGeocodingParams* - Additional query parameters for reverse geocoding (merged with defaults like `index`, `limit`, `returntruegeometry`).
  ```
  "cfg": {
     "cadastrappUrl": "/cadastrapp/services",
     "urbanismeappUrl": "/urbanisme",
     "layer": "urbanisme_parcelle",
     "helpUrl": "http://docs.georchestra.org/addon_urbanisme/",
-    "urbanismeRenseignGroupe": "false"
+        "urbanismeRenseignGroupe": false,
+        "reverseGeocodingUrl": "https://data.geopf.fr/geocodage/reverse",
+        "reverseGeocodingFromCrs": "EPSG:3857",
+        "reverseGeocodingToCrs": "EPSG:4326",
+        "reverseGeocodingParams": {
+            "index": "address",
+            "limit": 10,
+            "returntruegeometry": false
+        }
   }
 
  ```
@@ -57,6 +69,31 @@ You can configure this to point to your running instance of geOrchestra, with ur
 If you will try to do requests to absolute URLs, you may be redirected to use the proxy. (the request will be transformed in something like `/mapstore/proxy?url=...`).
 Make sure that this entry point(s) (configured in `proxyConfig.json`) are able to resolve the URL passed as parameter.
 If supported, you can add the URL to `useCors` entry in `localConfig.json` (see mapstore documentation).
+
+Example: 
+
+```
+hostnameWhitelist = demo.geo-solutions.it,data.geopf.fr
+methodsWhitelist = GET
+reqtypeWhitelist.generic = (.*exist.*)|(.*pdf.*)|(.*map.*)|(.*wms.*)|(.*wmts.*)|(.*wfs.*)|(.*ows.*)|(.*geocodage.*)
+```
+
+### Gateway
+
+The request sent using "reverseGeocodingUrl" may contain a GeoJSON polygon.
+This polygon may be complex and contain a large number of points.
+
+In this case, the length of the request (HTTP GET) may be too long for the GeOrchestra Security Gateway: you will receive an HTTP 414 error code.
+
+It may then be necessary to increase the maximum line length allowed by the GeOrchestra gateway.
+
+Example:
+
+```
+server:
+  netty:
+    maxInitialLineLength: 16384  # Default 4096, increase to 16KB
+```
 
 #### Authentication
 
