@@ -70,6 +70,31 @@ If you will try to do requests to absolute URLs, you may be redirected to use th
 Make sure that this entry point(s) (configured in `proxyConfig.json`) are able to resolve the URL passed as parameter.
 If supported, you can add the URL to `useCors` entry in `localConfig.json` (see mapstore documentation).
 
+Example: 
+
+```
+hostnameWhitelist = demo.geo-solutions.it,data.geopf.fr
+methodsWhitelist = GET
+reqtypeWhitelist.generic = (.*exist.*)|(.*pdf.*)|(.*map.*)|(.*wms.*)|(.*wmts.*)|(.*wfs.*)|(.*ows.*)|(.*geocodage.*)
+```
+
+### Gateway
+
+The request sent using "reverseGeocodingUrl" may contain a GeoJSON polygon.
+This polygon may be complex and contain a large number of points.
+
+In this case, the length of the request (HTTP GET) may be too long for the GeOrchestra Security Gateway: you will receive an HTTP 414 error code.
+
+It may then be necessary to increase the maximum line length allowed by the GeOrchestra gateway.
+
+Example:
+
+```
+server:
+  netty:
+    maxInitialLineLength: 16384  # Default 4096, increase to 16KB
+```
+
 #### Authentication
 
 If you need to login, you can run geOrchestra locally and use the header extension to fake the login (see [Dev documentation of GeOrchestra](https://docs.georchestra.geo-solutions.it/en/latest/developer/index.html#mocking-security)). When you will try to login from the login menu, you will be logged in as the user indicated in the headers.
