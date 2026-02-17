@@ -203,8 +203,161 @@ export const getReverseGeocoding = geometry => {
     if (!geometry) {
         return Promise.resolve(null);
     }
+
     const reprojectCoords = coords => coords.map(([x, y]) => proj4(reverseGeocodingFromCrs || DEFAULT_REVERSE_GEOCODING_FROM_CRS, reverseGeocodingToCrs || DEFAULT_REVERSE_GEOCODING_TO_CRS, [x, y]));
-    
+
+    /**
+     * Calcule la boîte englobante d'un polygon à partir de ses coordonnées
+     */
+    const getBoundingBox = coords => {
+        // coords est de la forme [[[x, y], [x, y], ...], [...]] (rings)
+        const xs = [];
+        const ys = [];
+        for (const ring of coords) {
+            for (const [x, y] of ring) {
+                xs.push(x);
+                ys.push(y);
+            }
+        }
+        return {
+            minX: Math.min(...xs),
+            maxX: Math.max(...xs),
+            minY: Math.min(...ys),
+            maxY: Math.max(...ys)
+        };
+    };
+
+    /**
+     * Calcule la longueur de la diagonale de la boîte englobante (en mètres)
+     */
+    const getDiagonal = bbox => {
+        const dx = bbox.maxX - bbox.minX;
+        const dy = bbox.maxY - bbox.minY;
+        return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    /**
+     * Vérifie si un point est à l'intérieur d'un polygon (algorithme Ray Casting)
+     * @param {Array} point - [x, y]
+     * @param {Array} polygon - coordonnées du polygon [[[x, y], ...]]
+     * @returns {boolean}
+     */
+    const pointInPolygon = (point, polygon) => {
+        const [x, y] = point;
+        const ring = polygon[0]; // Exterior ring
+        let inside = false;
+
+        for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+            const [xi, yi] = ring[i];
+            const [xj, yj] = ring[j];
+
+            const intersect = ((yi > y) !== (yj > y)) &&
+                (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+            if (intersect) inside = !inside;
+        }
+
+        return inside;
+    };
+
+    /**
+     * Vérifie si une cellule rectangulaire intersecte le polygon
+     * en testant si au moins un point (centre ou coins) est dans le polygon
+     * ou si le polygon traverse la cellule
+     */
+    const cellIntersectsPolygon = (cellMinX, cellMaxX, cellMinY, cellMaxY, polygonCoords) => {
+        // Tester le centre de la cellule
+        const centerX = (cellMinX + cellMaxX) / 2;
+        const centerY = (cellMinY + cellMaxY) / 2;
+
+        if (pointInPolygon([centerX, centerY], polygonCoords)) {
+            return true;
+        }
+
+        // Tester les 4 coins de la cellule
+        const corners = [
+            [cellMinX, cellMinY],
+            [cellMaxX, cellMinY],
+            [cellMaxX, cellMaxY],
+            [cellMinX, cellMaxY]
+        ];
+
+        for (const corner of corners) {
+            if (pointInPolygon(corner, polygonCoords)) {
+                return true;
+            }
+        }
+
+        // Vérifier si des points du polygon sont dans la cellule
+        const ring = polygonCoords[0];
+        for (const [x, y] of ring) {
+            if (x >= cellMinX && x <= cellMaxX && y >= cellMinY && y <= cellMaxY) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    /**
+     * Découpe un polygon en sous-polygons si sa diagonale dépasse la limite
+     * @param {Object} polygon - Le polygon à découper
+     * @param {number} maxDiagonal - La diagonale maximale en mètres (par défaut 1000m)
+     * @returns {Array} - Liste de polygons dont la diagonale est inférieure à maxDiagonal
+     */
+    const subdividePolygon = (polygon, maxDiagonal = 1000) => {
+        if (!polygon || polygon.type !== "Polygon" || !Array.isArray(polygon.coordinates)) {
+            return [polygon];
+        }
+
+        const bbox = getBoundingBox(polygon.coordinates);
+        const diagonal = getDiagonal(bbox);
+
+        // Si la diagonale est acceptable, retourner le polygon tel quel
+        if (diagonal <= maxDiagonal) {
+            return [polygon];
+        }
+
+        // Calculer le nombre de subdivisions nécessaires
+        const subdivisions = Math.ceil(diagonal / maxDiagonal);
+
+        // Calculer les dimensions de chaque cellule de la grille
+        const cellWidth = (bbox.maxX - bbox.minX) / subdivisions;
+        const cellHeight = (bbox.maxY - bbox.minY) / subdivisions;
+
+        const subPolygons = [];
+
+        // Créer une grille de sous-rectangles
+        for (let i = 0; i < subdivisions; i++) {
+            for (let j = 0; j < subdivisions; j++) {
+                const cellMinX = bbox.minX + i * cellWidth;
+                const cellMaxX = bbox.minX + (i + 1) * cellWidth;
+                const cellMinY = bbox.minY + j * cellHeight;
+                const cellMaxY = bbox.minY + (j + 1) * cellHeight;
+
+                // Vérifier si cette cellule intersecte le polygon original
+                if (!cellIntersectsPolygon(cellMinX, cellMaxX, cellMinY, cellMaxY, polygon.coordinates)) {
+                    continue; // Ignorer cette cellule
+                }
+
+                // Créer un polygon rectangulaire pour cette cellule
+                const cellPolygon = {
+                    type: "Polygon",
+                    coordinates: [[
+                        [cellMinX, cellMinY],
+                        [cellMaxX, cellMinY],
+                        [cellMaxX, cellMaxY],
+                        [cellMinX, cellMaxY],
+                        [cellMinX, cellMinY]
+                    ]]
+                };
+
+                subPolygons.push(cellPolygon);
+            }
+        }
+
+        return subPolygons;
+    };
+
     const normalizeGeometry = geom => {
         if (!geom || geom.type !== "Polygon" || !Array.isArray(geom.coordinates)) {
             return geom;
@@ -217,6 +370,7 @@ export const getReverseGeocoding = geometry => {
             coordinates: geom.coordinates.map(ring => reprojectCoords(ring))
         };
     };
+
     const request = geom => {
         const normalizedGeom = normalizeGeometry(geom);
         const defaultParams = {
@@ -233,15 +387,80 @@ export const getReverseGeocoding = geometry => {
             .get(reverseGeocodingURL || DEFAULT_REVERSE_GEOCODING_URL, {
                 params: requestParams
             })
-            .then(({ data }) => data);
-    }
+            .then(({ data }) => data)
+            .catch(error => {
+                console.error("Erreur lors du reverse geocoding:", error);
+                return [];
+            });
+    };
 
+    /**
+     * Déduplique les résultats basés sur un identifiant unique
+     */
+    const deduplicateResults = results => {
+        const seen = new Set();
+        const deduplicated = [];
+
+        for (const item of results) {
+            // Créer une clé unique basée sur les propriétés importantes
+            const key = item?.properties ?
+                `${item.properties.id || ''}_${item.properties.name || ''}_${item.properties.housenumber || ''}_${item.properties.street || ''}` :
+                JSON.stringify(item);
+
+            if (!seen.has(key)) {
+                seen.add(key);
+                deduplicated.push(item);
+            }
+        }
+
+        return deduplicated;
+    };
+
+    /**
+     * Traite un polygon en le subdivisant si nécessaire et en exécutant les requêtes
+     */
+    const processPolygon = polygon => {
+        try {
+            const subPolygons = subdividePolygon(polygon, 1000);
+            return Promise.all(subPolygons.map(request))
+                .then(results => results.filter(r => Array.isArray(r) || r));
+        } catch (error) {
+            console.error("Erreur lors du traitement du polygon:", error);
+            return Promise.resolve([]);
+        }
+    };
+
+    // Traitement MultiPolygon
     if (geometry.type === "MultiPolygon" && Array.isArray(geometry.coordinates)) {
         const polygons = geometry.coordinates.map(coords => ({
             type: "Polygon",
             coordinates: coords
         }));
-        return Promise.all(polygons.map(request));
+
+        return Promise.all(polygons.map(processPolygon))
+            .then(results => {
+                // Aplatir les résultats (array de arrays de arrays)
+                const flatResults = results.flat(2).filter(item => item);
+                // Dédupliquer
+                return deduplicateResults(flatResults);
+            })
+            .catch(error => {
+                console.error("Erreur lors du traitement MultiPolygon:", error);
+                return [];
+            });
+    }
+
+    // Traitement Polygon simple
+    if (geometry.type === "Polygon") {
+        return processPolygon(geometry)
+            .then(results => {
+                const flatResults = results.flat().filter(item => item);
+                return deduplicateResults(flatResults);
+            })
+            .catch(error => {
+                console.error("Erreur lors du traitement Polygon:", error);
+                return [];
+            });
     }
 
     return request(geometry);
