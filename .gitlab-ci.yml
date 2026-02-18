@@ -2,8 +2,9 @@ variables:
   OSS_MVN_DISABLE: "true"
 
 include:
-  - project: 'boost/template-ci/pipelines/common'
-    file: 'securite/oss-index/oss-index-template.yml'  
+  - component: $CI_SERVER_FQDN/boost/ci-component/security/oss-npm@2.0.0
+    inputs:
+      oss_package_json : "package-lock.json" 
   - component: '$CI_SERVER_FQDN/boost/ci-component/security/software-supply-chain-npm@1.4.0'
     inputs:
       ssc_lock_file: "package-lock.json"
