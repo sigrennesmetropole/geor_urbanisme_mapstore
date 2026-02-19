@@ -9,6 +9,9 @@
 import axios from "@mapstore/libs/ajax";
 import { isEmpty } from "lodash";
 import proj4 from "proj4";
+import bbox from "@turf/bbox";
+import { polygon as turfPolygon } from "@turf/helpers";
+import intersect from "@turf/intersect";
 import {DEFAULT_CADASTRAPP_URL, DEFAULT_URBANISMEAPP_URL, DEFAULT_REVERSE_GEOCODING_URL, DEFAULT_REVERSE_GEOCODING_FROM_CRS, DEFAULT_REVERSE_GEOCODING_TO_CRS} from "@js/extension/constants";
 
 let cadastrappURL;
@@ -204,36 +207,67 @@ export const getReverseGeocoding = geometry => {
         return Promise.resolve(null);
     }
 
+    // S'assurer que la projection Lambert 93 (EPSG:2154) est définie pour proj4
+    if (!proj4.defs('EPSG:2154')) {
+        proj4.defs('EPSG:2154', '+proj=lcc +lat_0=46.5 +lon_0=3 +lat_1=49 +lat_2=44 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=crs');
+    }
+
     const reprojectCoords = coords => coords.map(([x, y]) => proj4(reverseGeocodingFromCrs || DEFAULT_REVERSE_GEOCODING_FROM_CRS, reverseGeocodingToCrs || DEFAULT_REVERSE_GEOCODING_TO_CRS, [x, y]));
 
     /**
-     * Calcule la boîte englobante d'un polygon à partir de ses coordonnées
+     * Reprojette un polygone vers Lambert 93 (EPSG:2154) pour calculs en mètres
+     * @param {Object} polygon - Le polygon GeoJSON (turf polygon avec geometry.coordinates)
+     * @param {string} sourceCrs - Le CRS source (par défaut EPSG:4326)
+     * @returns {Object} Polygon reprojeté en Lambert 93
      */
-    const getBoundingBox = coords => {
-        // coords est de la forme [[[x, y], [x, y], ...], [...]] (rings)
-        const xs = [];
-        const ys = [];
-        for (const ring of coords) {
-            for (const [x, y] of ring) {
-                xs.push(x);
-                ys.push(y);
-            }
+    const reprojectPolygonToLambert93 = (polygon, sourceCrs = 'EPSG:4326') => {
+        if (!polygon) {
+            return polygon;
         }
-        return {
-            minX: Math.min(...xs),
-            maxX: Math.max(...xs),
-            minY: Math.min(...ys),
-            maxY: Math.max(...ys)
-        };
+
+        const targetCrs = 'EPSG:2154'; // Lambert 93
+
+        // turfPolygon retourne un Feature avec geometry.coordinates
+        const coords = polygon.geometry ? polygon.geometry.coordinates : polygon.coordinates;
+
+        if (!coords) {
+            console.error("[Urbanisme] Pas de coordonnées dans le polygon:", polygon);
+            return polygon;
+        }
+
+        // Reprojeter toutes les coordonnées du polygone
+        const reprojectedCoords = coords.map(ring =>
+            ring.map(([x, y]) => proj4(sourceCrs, targetCrs, [x, y]))
+        );
+
+        return turfPolygon(reprojectedCoords);
+    };
+
+    /**
+     * Calcule la boîte englobante d'un polygon à partir de ses coordonnées
+     * @param {Array} coords - Les coordonnées du polygon
+     * @param {string} sourceCrs - Le CRS source (par défaut EPSG:4326)
+     * @returns {Object} Bounding box avec minX, maxX, minY, maxY en mètres (Lambert 93)
+     */
+    const getBoundingBox = (coords, sourceCrs = 'EPSG:4326') => {
+        // Créer un polygon et le reprojeter en Lambert 93 pour avoir des distances en mètres
+        const polygon = turfPolygon(coords);
+        const reprojectedPolygon = reprojectPolygonToLambert93(polygon, sourceCrs);
+
+        // Calculer la boîte englobante sur le polygon reprojeté
+        const bboxResult = bbox(reprojectedPolygon);
+
+        const [minX, minY, maxX, maxY] = bboxResult;
+        return { minX, maxX, minY, maxY };
     };
 
     /**
      * Calcule la longueur de la diagonale de la boîte englobante (en mètres)
      */
-    const getDiagonal = bbox => {
-        const dx = bbox.maxX - bbox.minX;
-        const dy = bbox.maxY - bbox.minY;
-        return Math.sqrt(dx * dx + dy * dy);
+    const getDiagonal = boundingBox => {
+        const dx = boundingBox.maxX - boundingBox.minX;
+        const dy = boundingBox.maxY - boundingBox.minY;
+        return Math.hypot(dx, dy);
     };
 
     /**
@@ -251,9 +285,9 @@ export const getReverseGeocoding = geometry => {
             const [xi, yi] = ring[i];
             const [xj, yj] = ring[j];
 
-            const intersect = ((yi > y) !== (yj > y)) &&
+            const isIntersecting = ((yi > y) !== (yj > y)) &&
                 (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-            if (intersect) inside = !inside;
+            if (isIntersecting) inside = !inside;
         }
 
         return inside;
@@ -302,56 +336,90 @@ export const getReverseGeocoding = geometry => {
      * Découpe un polygon en sous-polygons si sa diagonale dépasse la limite
      * @param {Object} polygon - Le polygon à découper
      * @param {number} maxDiagonal - La diagonale maximale en mètres (par défaut 1000m)
+     * @param {string} sourceCrs - Le CRS source du polygon (par défaut EPSG:4326)
      * @returns {Array} - Liste de polygons dont la diagonale est inférieure à maxDiagonal
      */
-    const subdividePolygon = (polygon, maxDiagonal = 1000) => {
+    const subdividePolygon = (polygon, maxDiagonal = 1000, sourceCrs = 'EPSG:4326') => {
         if (!polygon || polygon.type !== "Polygon" || !Array.isArray(polygon.coordinates)) {
             return [polygon];
         }
 
-        const bbox = getBoundingBox(polygon.coordinates);
-        const diagonal = getDiagonal(bbox);
+        const boundingBox = getBoundingBox(polygon.coordinates, sourceCrs);
+        const diagonal = getDiagonal(boundingBox);
 
         // Si la diagonale est acceptable, retourner le polygon tel quel
         if (diagonal <= maxDiagonal) {
             return [polygon];
         }
 
+        // Reprojeter le polygon en Lambert 93 pour travailler en mètres
+        const polygonLambert93 = reprojectPolygonToLambert93(turfPolygon(polygon.coordinates), sourceCrs);
+        const coordsLambert93 = polygonLambert93.geometry.coordinates;
+
         // Calculer le nombre de subdivisions nécessaires
         const subdivisions = Math.ceil(diagonal / maxDiagonal);
 
         // Calculer les dimensions de chaque cellule de la grille
-        const cellWidth = (bbox.maxX - bbox.minX) / subdivisions;
-        const cellHeight = (bbox.maxY - bbox.minY) / subdivisions;
+        const cellWidth = (boundingBox.maxX - boundingBox.minX) / subdivisions;
+        const cellHeight = (boundingBox.maxY - boundingBox.minY) / subdivisions;
 
         const subPolygons = [];
+        const targetCrs = 'EPSG:2154'; // Lambert 93
 
-        // Créer une grille de sous-rectangles
+        // Créer une grille de sous-rectangles en Lambert 93
         for (let i = 0; i < subdivisions; i++) {
             for (let j = 0; j < subdivisions; j++) {
-                const cellMinX = bbox.minX + i * cellWidth;
-                const cellMaxX = bbox.minX + (i + 1) * cellWidth;
-                const cellMinY = bbox.minY + j * cellHeight;
-                const cellMaxY = bbox.minY + (j + 1) * cellHeight;
+                const cellMinX = boundingBox.minX + i * cellWidth;
+                const cellMaxX = boundingBox.minX + (i + 1) * cellWidth;
+                const cellMinY = boundingBox.minY + j * cellHeight;
+                const cellMaxY = boundingBox.minY + (j + 1) * cellHeight;
 
-                // Vérifier si cette cellule intersecte le polygon original
-                if (!cellIntersectsPolygon(cellMinX, cellMaxX, cellMinY, cellMaxY, polygon.coordinates)) {
+                // Vérifier si cette cellule intersecte le polygon en Lambert 93
+                if (!cellIntersectsPolygon(cellMinX, cellMaxX, cellMinY, cellMaxY, coordsLambert93)) {
                     continue; // Ignorer cette cellule
                 }
 
-                // Créer un polygon rectangulaire pour cette cellule
-                const cellPolygon = {
-                    type: "Polygon",
-                    coordinates: [[
-                        [cellMinX, cellMinY],
-                        [cellMaxX, cellMinY],
-                        [cellMaxX, cellMaxY],
-                        [cellMinX, cellMaxY],
-                        [cellMinX, cellMinY]
-                    ]]
-                };
+                // Créer un polygon rectangulaire pour cette cellule en Lambert 93
+                const cellPolygonLambert93 = turfPolygon([[
+                    [cellMinX, cellMinY],
+                    [cellMaxX, cellMinY],
+                    [cellMaxX, cellMaxY],
+                    [cellMinX, cellMaxY],
+                    [cellMinX, cellMinY]
+                ]]);
 
-                subPolygons.push(cellPolygon);
+                // Calculer l'intersection entre le polygon d'origine et la cellule (en Lambert 93)
+                const intersection = intersect(polygonLambert93, cellPolygonLambert93);
+
+                if (!intersection) {
+                    // Pas d'intersection, ignorer cette cellule
+                    continue;
+                }
+
+                // L'intersection peut être un Polygon ou un MultiPolygon
+                if (intersection.geometry.type === 'Polygon') {
+                    // Reprojeter l'intersection vers le CRS source
+                    const intersectionCoordsSource = intersection.geometry.coordinates.map(ring =>
+                        ring.map(([x, y]) => proj4(targetCrs, sourceCrs, [x, y]))
+                    );
+
+                    subPolygons.push({
+                        type: "Polygon",
+                        coordinates: intersectionCoordsSource
+                    });
+                } else if (intersection.geometry.type === 'MultiPolygon') {
+                    // Pour un MultiPolygon, créer un polygon séparé pour chaque partie
+                    for (const polyCoords of intersection.geometry.coordinates) {
+                        const reprojectPolygonCoords = polyCoords.map(ring =>
+                            ring.map(([x, y]) => proj4(targetCrs, sourceCrs, [x, y]))
+                        );
+
+                        subPolygons.push({
+                            type: "Polygon",
+                            coordinates: reprojectPolygonCoords
+                        });
+                    }
+                }
             }
         }
 
@@ -421,9 +489,15 @@ export const getReverseGeocoding = geometry => {
      */
     const processPolygon = polygon => {
         try {
-            const subPolygons = subdividePolygon(polygon, 1000);
+            // Le geometry d'entrée est dans le CRS spécifié par reverseGeocodingFromCrs
+            const sourceCrs = reverseGeocodingFromCrs || DEFAULT_REVERSE_GEOCODING_FROM_CRS;
+            const subPolygons = subdividePolygon(polygon, 1000, sourceCrs);
+
             return Promise.all(subPolygons.map(request))
-                .then(results => results.filter(r => Array.isArray(r) || r));
+                .then(results => {
+                    // Aplatir les résultats (chaque request retourne un tableau)
+                    return results.flat().filter(Boolean);
+                });
         } catch (error) {
             console.error("Erreur lors du traitement du polygon:", error);
             return Promise.resolve([]);
@@ -439,8 +513,8 @@ export const getReverseGeocoding = geometry => {
 
         return Promise.all(polygons.map(processPolygon))
             .then(results => {
-                // Aplatir les résultats (array de arrays de arrays)
-                const flatResults = results.flat(2).filter(item => item);
+                // Aplatir les résultats (processPolygon retourne déjà un tableau aplati)
+                const flatResults = results.flat().filter(Boolean);
                 // Dédupliquer
                 return deduplicateResults(flatResults);
             })
@@ -454,8 +528,7 @@ export const getReverseGeocoding = geometry => {
     if (geometry.type === "Polygon") {
         return processPolygon(geometry)
             .then(results => {
-                const flatResults = results.flat().filter(item => item);
-                return deduplicateResults(flatResults);
+                return deduplicateResults(results);
             })
             .catch(error => {
                 console.error("Erreur lors du traitement Polygon:", error);
