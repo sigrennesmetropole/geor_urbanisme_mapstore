@@ -215,44 +215,21 @@ export const getReverseGeocoding = geometry => {
     const reprojectCoords = coords => coords.map(([x, y]) => proj4(reverseGeocodingFromCrs || DEFAULT_REVERSE_GEOCODING_FROM_CRS, reverseGeocodingToCrs || DEFAULT_REVERSE_GEOCODING_TO_CRS, [x, y]));
 
     /**
-     * Reprojette un polygone vers Lambert 93 (EPSG:2154) pour calculs en mètres
-     * @param {Object} polygon - Le polygon GeoJSON (turf polygon avec geometry.coordinates)
-     * @param {string} sourceCrs - Le CRS source (par défaut EPSG:4326)
-     * @returns {Object} Polygon reprojeté en Lambert 93
-     */
-    const reprojectPolygonToLambert93 = (polygon, sourceCrs = 'EPSG:4326') => {
-        if (!polygon) {
-            return polygon;
-        }
-
-        const targetCrs = 'EPSG:2154'; // Lambert 93
-
-        // turfPolygon retourne un Feature avec geometry.coordinates
-        const coords = polygon.geometry ? polygon.geometry.coordinates : polygon.coordinates;
-
-        if (!coords) {
-            console.error("[Urbanisme] Pas de coordonnées dans le polygon:", polygon);
-            return polygon;
-        }
-
-        // Reprojeter toutes les coordonnées du polygone
-        const reprojectedCoords = coords.map(ring =>
-            ring.map(([x, y]) => proj4(sourceCrs, targetCrs, [x, y]))
-        );
-
-        return turfPolygon(reprojectedCoords);
-    };
-
-    /**
      * Calcule la boîte englobante d'un polygon à partir de ses coordonnées
+     * en reprojettant en Lambert 93 pour obtenir des dimensions en mètres
      * @param {Array} coords - Les coordonnées du polygon
      * @param {string} sourceCrs - Le CRS source (par défaut EPSG:4326)
      * @returns {Object} Bounding box avec minX, maxX, minY, maxY en mètres (Lambert 93)
      */
     const getBoundingBoxL93 = (coords, sourceCrs = 'EPSG:4326') => {
+        const targetCrs = 'EPSG:2154'; // Lambert 93
+
         // Créer un polygon et le reprojeter en Lambert 93 pour avoir des distances en mètres
         const polygon = turfPolygon(coords);
-        const reprojectedPolygon = reprojectPolygonToLambert93(polygon, sourceCrs);
+        const reprojectedCoords = polygon.geometry.coordinates.map(ring =>
+            ring.map(([x, y]) => proj4(sourceCrs, targetCrs, [x, y]))
+        );
+        const reprojectedPolygon = turfPolygon(reprojectedCoords);
 
         // Calculer la boîte englobante sur le polygon reprojeté
         const bboxResult = bbox(reprojectedPolygon);
@@ -290,30 +267,29 @@ export const getReverseGeocoding = geometry => {
             return [polygon];
         }
 
-        // Reprojeter le polygon en Lambert 93 pour travailler en mètres
-        const polygonLambert93 = reprojectPolygonToLambert93(turfPolygon(polygon.coordinates), sourceCrs);
-
-        // Calculer le nombre de subdivisions nécessaires
+        // Calculer le nombre de subdivisions nécessaires (basé sur la diagonale en Lambert 93)
         const subdivisions = Math.ceil(diagonal / maxDiagonal);
 
-        // Calculer les dimensions de chaque cellule de la grille
-        const cellWidth = (boundingBoxL93.maxX - boundingBoxL93.minX) / subdivisions;
-        const cellHeight = (boundingBoxL93.maxY - boundingBoxL93.minY) / subdivisions;
+        // Calculer les dimensions de chaque cellule de la grille en coordonnées source
+        const bboxSource = bbox(turfPolygon(polygon.coordinates));
+        const [minX, minY, maxX, maxY] = bboxSource;
+
+        const cellWidth = (maxX - minX) / subdivisions;
+        const cellHeight = (maxY - minY) / subdivisions;
 
         const subPolygons = [];
-        const targetCrs = 'EPSG:2154'; // Lambert 93
+        const polygonOriginal = turfPolygon(polygon.coordinates);
 
-        // Créer une grille de sous-rectangles en Lambert 93
+        // Créer une grille de sous-rectangles dans la projection d'origine
         for (let i = 0; i < subdivisions; i++) {
             for (let j = 0; j < subdivisions; j++) {
-                const cellMinX = boundingBoxL93.minX + i * cellWidth;
-                const cellMaxX = boundingBoxL93.minX + (i + 1) * cellWidth;
-                const cellMinY = boundingBoxL93.minY + j * cellHeight;
-                const cellMaxY = boundingBoxL93.minY + (j + 1) * cellHeight;
+                const cellMinX = minX + i * cellWidth;
+                const cellMaxX = minX + (i + 1) * cellWidth;
+                const cellMinY = minY + j * cellHeight;
+                const cellMaxY = minY + (j + 1) * cellHeight;
 
-
-                // Créer un polygon rectangulaire pour cette cellule en Lambert 93
-                const cellPolygonLambert93 = turfPolygon([[
+                // Créer un polygon rectangulaire pour cette cellule dans la projection d'origine
+                const cellPolygon = turfPolygon([[
                     [cellMinX, cellMinY],
                     [cellMaxX, cellMinY],
                     [cellMaxX, cellMaxY],
@@ -321,8 +297,8 @@ export const getReverseGeocoding = geometry => {
                     [cellMinX, cellMinY]
                 ]]);
 
-                // Calculer l'intersection entre le polygon d'origine et la cellule (en Lambert 93)
-                const intersection = intersect(polygonLambert93, cellPolygonLambert93);
+                // Calculer l'intersection entre le polygon d'origine et la cellule
+                const intersection = intersect(polygonOriginal, cellPolygon);
 
                 if (!intersection) {
                     // Pas d'intersection, ignorer cette cellule
@@ -331,25 +307,16 @@ export const getReverseGeocoding = geometry => {
 
                 // L'intersection peut être un Polygon ou un MultiPolygon
                 if (intersection.geometry.type === 'Polygon') {
-                    // Reprojeter l'intersection vers le CRS source
-                    const intersectionCoordsSource = intersection.geometry.coordinates.map(ring =>
-                        ring.map(([x, y]) => proj4(targetCrs, sourceCrs, [x, y]))
-                    );
-
                     subPolygons.push({
                         type: "Polygon",
-                        coordinates: intersectionCoordsSource
+                        coordinates: intersection.geometry.coordinates
                     });
                 } else if (intersection.geometry.type === 'MultiPolygon') {
                     // Pour un MultiPolygon, créer un polygon séparé pour chaque partie
                     for (const polyCoords of intersection.geometry.coordinates) {
-                        const reprojectPolygonCoords = polyCoords.map(ring =>
-                            ring.map(([x, y]) => proj4(targetCrs, sourceCrs, [x, y]))
-                        );
-
                         subPolygons.push({
                             type: "Polygon",
-                            coordinates: reprojectPolygonCoords
+                            coordinates: polyCoords
                         });
                     }
                 }
