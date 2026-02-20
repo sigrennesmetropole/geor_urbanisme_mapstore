@@ -249,7 +249,7 @@ export const getReverseGeocoding = geometry => {
      * @param {string} sourceCrs - Le CRS source (par défaut EPSG:4326)
      * @returns {Object} Bounding box avec minX, maxX, minY, maxY en mètres (Lambert 93)
      */
-    const getBoundingBox = (coords, sourceCrs = 'EPSG:4326') => {
+    const getBoundingBoxL93 = (coords, sourceCrs = 'EPSG:4326') => {
         // Créer un polygon et le reprojeter en Lambert 93 pour avoir des distances en mètres
         const polygon = turfPolygon(coords);
         const reprojectedPolygon = reprojectPolygonToLambert93(polygon, sourceCrs);
@@ -271,68 +271,6 @@ export const getReverseGeocoding = geometry => {
     };
 
     /**
-     * Vérifie si un point est à l'intérieur d'un polygon (algorithme Ray Casting)
-     * @param {Array} point - [x, y]
-     * @param {Array} polygon - coordonnées du polygon [[[x, y], ...]]
-     * @returns {boolean}
-     */
-    const pointInPolygon = (point, polygon) => {
-        const [x, y] = point;
-        const ring = polygon[0]; // Exterior ring
-        let inside = false;
-
-        for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-            const [xi, yi] = ring[i];
-            const [xj, yj] = ring[j];
-
-            const isIntersecting = ((yi > y) !== (yj > y)) &&
-                (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-            if (isIntersecting) inside = !inside;
-        }
-
-        return inside;
-    };
-
-    /**
-     * Vérifie si une cellule rectangulaire intersecte le polygon
-     * en testant si au moins un point (centre ou coins) est dans le polygon
-     * ou si le polygon traverse la cellule
-     */
-    const cellIntersectsPolygon = (cellMinX, cellMaxX, cellMinY, cellMaxY, polygonCoords) => {
-        // Tester le centre de la cellule
-        const centerX = (cellMinX + cellMaxX) / 2;
-        const centerY = (cellMinY + cellMaxY) / 2;
-
-        if (pointInPolygon([centerX, centerY], polygonCoords)) {
-            return true;
-        }
-
-        // Tester les 4 coins de la cellule
-        const corners = [
-            [cellMinX, cellMinY],
-            [cellMaxX, cellMinY],
-            [cellMaxX, cellMaxY],
-            [cellMinX, cellMaxY]
-        ];
-
-        for (const corner of corners) {
-            if (pointInPolygon(corner, polygonCoords)) {
-                return true;
-            }
-        }
-
-        // Vérifier si des points du polygon sont dans la cellule
-        const ring = polygonCoords[0];
-        for (const [x, y] of ring) {
-            if (x >= cellMinX && x <= cellMaxX && y >= cellMinY && y <= cellMaxY) {
-                return true;
-            }
-        }
-
-        return false;
-    };
-
-    /**
      * Découpe un polygon en sous-polygons si sa diagonale dépasse la limite
      * @param {Object} polygon - Le polygon à découper
      * @param {number} maxDiagonal - La diagonale maximale en mètres (par défaut 1000m)
@@ -344,8 +282,8 @@ export const getReverseGeocoding = geometry => {
             return [polygon];
         }
 
-        const boundingBox = getBoundingBox(polygon.coordinates, sourceCrs);
-        const diagonal = getDiagonal(boundingBox);
+        const boundingBoxL93 = getBoundingBoxL93(polygon.coordinates, sourceCrs);
+        const diagonal = getDiagonal(boundingBoxL93);
 
         // Si la diagonale est acceptable, retourner le polygon tel quel
         if (diagonal <= maxDiagonal) {
@@ -354,14 +292,13 @@ export const getReverseGeocoding = geometry => {
 
         // Reprojeter le polygon en Lambert 93 pour travailler en mètres
         const polygonLambert93 = reprojectPolygonToLambert93(turfPolygon(polygon.coordinates), sourceCrs);
-        const coordsLambert93 = polygonLambert93.geometry.coordinates;
 
         // Calculer le nombre de subdivisions nécessaires
         const subdivisions = Math.ceil(diagonal / maxDiagonal);
 
         // Calculer les dimensions de chaque cellule de la grille
-        const cellWidth = (boundingBox.maxX - boundingBox.minX) / subdivisions;
-        const cellHeight = (boundingBox.maxY - boundingBox.minY) / subdivisions;
+        const cellWidth = (boundingBoxL93.maxX - boundingBoxL93.minX) / subdivisions;
+        const cellHeight = (boundingBoxL93.maxY - boundingBoxL93.minY) / subdivisions;
 
         const subPolygons = [];
         const targetCrs = 'EPSG:2154'; // Lambert 93
@@ -369,15 +306,11 @@ export const getReverseGeocoding = geometry => {
         // Créer une grille de sous-rectangles en Lambert 93
         for (let i = 0; i < subdivisions; i++) {
             for (let j = 0; j < subdivisions; j++) {
-                const cellMinX = boundingBox.minX + i * cellWidth;
-                const cellMaxX = boundingBox.minX + (i + 1) * cellWidth;
-                const cellMinY = boundingBox.minY + j * cellHeight;
-                const cellMaxY = boundingBox.minY + (j + 1) * cellHeight;
+                const cellMinX = boundingBoxL93.minX + i * cellWidth;
+                const cellMaxX = boundingBoxL93.minX + (i + 1) * cellWidth;
+                const cellMinY = boundingBoxL93.minY + j * cellHeight;
+                const cellMaxY = boundingBoxL93.minY + (j + 1) * cellHeight;
 
-                // Vérifier si cette cellule intersecte le polygon en Lambert 93
-                if (!cellIntersectsPolygon(cellMinX, cellMaxX, cellMinY, cellMaxY, coordsLambert93)) {
-                    continue; // Ignorer cette cellule
-                }
 
                 // Créer un polygon rectangulaire pour cette cellule en Lambert 93
                 const cellPolygonLambert93 = turfPolygon([[
