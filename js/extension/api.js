@@ -9,6 +9,9 @@
 import axios from "@mapstore/libs/ajax";
 import { isEmpty } from "lodash";
 import proj4 from "proj4";
+import bbox from "@turf/bbox";
+import { polygon as turfPolygon } from "@turf/helpers";
+import intersect from "@turf/intersect";
 import {DEFAULT_CADASTRAPP_URL, DEFAULT_URBANISMEAPP_URL, DEFAULT_REVERSE_GEOCODING_URL, DEFAULT_REVERSE_GEOCODING_FROM_CRS, DEFAULT_REVERSE_GEOCODING_TO_CRS} from "@js/extension/constants";
 
 let cadastrappURL;
@@ -203,8 +206,126 @@ export const getReverseGeocoding = geometry => {
     if (!geometry) {
         return Promise.resolve(null);
     }
+
+    // S'assurer que la projection Lambert 93 (EPSG:2154) est définie pour proj4
+    if (!proj4.defs('EPSG:2154')) {
+        proj4.defs('EPSG:2154', '+proj=lcc +lat_0=46.5 +lon_0=3 +lat_1=49 +lat_2=44 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=crs');
+    }
+
     const reprojectCoords = coords => coords.map(([x, y]) => proj4(reverseGeocodingFromCrs || DEFAULT_REVERSE_GEOCODING_FROM_CRS, reverseGeocodingToCrs || DEFAULT_REVERSE_GEOCODING_TO_CRS, [x, y]));
-    
+
+    /**
+     * Calcule la boîte englobante d'un polygon à partir de ses coordonnées
+     * en reprojettant en Lambert 93 pour obtenir des dimensions en mètres
+     * @param {Array} coords - Les coordonnées du polygon
+     * @param {string} sourceCrs - Le CRS source (par défaut EPSG:4326)
+     * @returns {Object} Bounding box avec minX, maxX, minY, maxY en mètres (Lambert 93)
+     */
+    const getBoundingBoxL93 = (coords, sourceCrs = 'EPSG:4326') => {
+        const targetCrs = 'EPSG:2154'; // Lambert 93
+
+        // Créer un polygon et le reprojeter en Lambert 93 pour avoir des distances en mètres
+        const polygon = turfPolygon(coords);
+        const reprojectedCoords = polygon.geometry.coordinates.map(ring =>
+            ring.map(([x, y]) => proj4(sourceCrs, targetCrs, [x, y]))
+        );
+        const reprojectedPolygon = turfPolygon(reprojectedCoords);
+
+        // Calculer la boîte englobante sur le polygon reprojeté
+        const bboxResult = bbox(reprojectedPolygon);
+
+        const [minX, minY, maxX, maxY] = bboxResult;
+        return { minX, maxX, minY, maxY };
+    };
+
+    /**
+     * Calcule la longueur de la diagonale de la boîte englobante (en mètres)
+     */
+    const getDiagonal = boundingBox => {
+        const dx = boundingBox.maxX - boundingBox.minX;
+        const dy = boundingBox.maxY - boundingBox.minY;
+        return Math.hypot(dx, dy);
+    };
+
+    /**
+     * Découpe un polygon en sous-polygons si sa diagonale dépasse la limite
+     * @param {Object} polygon - Le polygon à découper
+     * @param {number} maxDiagonal - La diagonale maximale en mètres (par défaut 1000m)
+     * @param {string} sourceCrs - Le CRS source du polygon (par défaut EPSG:4326)
+     * @returns {Array} - Liste de polygons dont la diagonale est inférieure à maxDiagonal
+     */
+    const subdividePolygon = (polygon, maxDiagonal = 1000, sourceCrs = 'EPSG:4326') => {
+        if (!polygon || polygon.type !== "Polygon" || !Array.isArray(polygon.coordinates)) {
+            return [polygon];
+        }
+
+        const boundingBoxL93 = getBoundingBoxL93(polygon.coordinates, sourceCrs);
+        const diagonal = getDiagonal(boundingBoxL93);
+
+        // Si la diagonale est acceptable, retourner le polygon tel quel
+        if (diagonal <= maxDiagonal) {
+            return [polygon];
+        }
+
+        // Calculer le nombre de subdivisions nécessaires (basé sur la diagonale en Lambert 93)
+        const subdivisions = Math.ceil(diagonal / maxDiagonal);
+
+        // Calculer les dimensions de chaque cellule de la grille en coordonnées source
+        const bboxSource = bbox(turfPolygon(polygon.coordinates));
+        const [minX, minY, maxX, maxY] = bboxSource;
+
+        const cellWidth = (maxX - minX) / subdivisions;
+        const cellHeight = (maxY - minY) / subdivisions;
+
+        const subPolygons = [];
+        const polygonOriginal = turfPolygon(polygon.coordinates);
+
+        // Créer une grille de sous-rectangles dans la projection d'origine
+        for (let i = 0; i < subdivisions; i++) {
+            for (let j = 0; j < subdivisions; j++) {
+                const cellMinX = minX + i * cellWidth;
+                const cellMaxX = minX + (i + 1) * cellWidth;
+                const cellMinY = minY + j * cellHeight;
+                const cellMaxY = minY + (j + 1) * cellHeight;
+
+                // Créer un polygon rectangulaire pour cette cellule dans la projection d'origine
+                const cellPolygon = turfPolygon([[
+                    [cellMinX, cellMinY],
+                    [cellMaxX, cellMinY],
+                    [cellMaxX, cellMaxY],
+                    [cellMinX, cellMaxY],
+                    [cellMinX, cellMinY]
+                ]]);
+
+                // Calculer l'intersection entre le polygon d'origine et la cellule
+                const intersection = intersect(polygonOriginal, cellPolygon);
+
+                if (!intersection) {
+                    // Pas d'intersection, ignorer cette cellule
+                    continue;
+                }
+
+                // L'intersection peut être un Polygon ou un MultiPolygon
+                if (intersection.geometry.type === 'Polygon') {
+                    subPolygons.push({
+                        type: "Polygon",
+                        coordinates: intersection.geometry.coordinates
+                    });
+                } else if (intersection.geometry.type === 'MultiPolygon') {
+                    // Pour un MultiPolygon, créer un polygon séparé pour chaque partie
+                    for (const polyCoords of intersection.geometry.coordinates) {
+                        subPolygons.push({
+                            type: "Polygon",
+                            coordinates: polyCoords
+                        });
+                    }
+                }
+            }
+        }
+
+        return subPolygons;
+    };
+
     const normalizeGeometry = geom => {
         if (!geom || geom.type !== "Polygon" || !Array.isArray(geom.coordinates)) {
             return geom;
@@ -217,6 +338,7 @@ export const getReverseGeocoding = geometry => {
             coordinates: geom.coordinates.map(ring => reprojectCoords(ring))
         };
     };
+
     const request = geom => {
         const normalizedGeom = normalizeGeometry(geom);
         const defaultParams = {
@@ -233,15 +355,85 @@ export const getReverseGeocoding = geometry => {
             .get(reverseGeocodingURL || DEFAULT_REVERSE_GEOCODING_URL, {
                 params: requestParams
             })
-            .then(({ data }) => data);
-    }
+            .then(({ data }) => data)
+            .catch(error => {
+                console.error("Erreur lors du reverse geocoding:", error);
+                return [];
+            });
+    };
 
+    /**
+     * Déduplique les résultats basés sur un identifiant unique
+     */
+    const deduplicateResults = results => {
+        const seen = new Set();
+        const deduplicated = [];
+
+        for (const item of results) {
+            // Créer une clé unique basée sur les propriétés importantes
+            const key = item?.properties ?
+                `${item.properties.id || ''}_${item.properties.name || ''}_${item.properties.housenumber || ''}_${item.properties.street || ''}` :
+                JSON.stringify(item);
+
+            if (!seen.has(key)) {
+                seen.add(key);
+                deduplicated.push(item);
+            }
+        }
+
+        return deduplicated;
+    };
+
+    /**
+     * Traite un polygon en le subdivisant si nécessaire et en exécutant les requêtes
+     */
+    const processPolygon = polygon => {
+        try {
+            // Le geometry d'entrée est dans le CRS spécifié par reverseGeocodingFromCrs
+            const sourceCrs = reverseGeocodingFromCrs || DEFAULT_REVERSE_GEOCODING_FROM_CRS;
+            const subPolygons = subdividePolygon(polygon, 1000, sourceCrs);
+
+            return Promise.all(subPolygons.map(request))
+                .then(results => {
+                    // Aplatir les résultats (chaque request retourne un tableau)
+                    return results.flat().filter(Boolean);
+                });
+        } catch (error) {
+            console.error("Erreur lors du traitement du polygon:", error);
+            return Promise.resolve([]);
+        }
+    };
+
+    // Traitement MultiPolygon
     if (geometry.type === "MultiPolygon" && Array.isArray(geometry.coordinates)) {
         const polygons = geometry.coordinates.map(coords => ({
             type: "Polygon",
             coordinates: coords
         }));
-        return Promise.all(polygons.map(request));
+
+        return Promise.all(polygons.map(processPolygon))
+            .then(results => {
+                // Aplatir les résultats (processPolygon retourne déjà un tableau aplati)
+                const flatResults = results.flat().filter(Boolean);
+                // Dédupliquer
+                return deduplicateResults(flatResults);
+            })
+            .catch(error => {
+                console.error("Erreur lors du traitement MultiPolygon:", error);
+                return [];
+            });
+    }
+
+    // Traitement Polygon simple
+    if (geometry.type === "Polygon") {
+        return processPolygon(geometry)
+            .then(results => {
+                return deduplicateResults(results);
+            })
+            .catch(error => {
+                console.error("Erreur lors du traitement Polygon:", error);
+                return [];
+            });
     }
 
     return request(geometry);

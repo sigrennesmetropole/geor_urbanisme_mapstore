@@ -99,7 +99,7 @@ import {
     showMarkerSelector
 } from "@mapstore/selectors/mapInfo";
 import {styleFeatures} from "../utils/UrbanismeUtils";
-import {resolutionsSelector} from "@mapstore/selectors/map";
+import {resolutionsSelector, projectionSelector} from "@mapstore/selectors/map";
 import {
     registerHook,
     RESOLUTION_HOOK
@@ -393,6 +393,7 @@ export const getFeatureInfoEpic = (action$, {getState}) =>
             const {idParcelleKey} = configSelector(state) ?? {};
             const parcelleId = layerMetadata.features?.[0]?.properties?.[idParcelleKey ?? "id_parc"] || "";
             const featureGeometry = layerMetadata.features?.[0]?.geometry || null;
+            const mapProjection = projectionSelector(state) || "EPSG:3857";
             const activeTool = activeToolSelector(state);
             if (isEmpty(parcelleId)) {
                 return Rx.Observable.of(
@@ -413,7 +414,7 @@ export const getFeatureInfoEpic = (action$, {getState}) =>
                     getFIC(parcelleId, 0),
                     getFIC(parcelleId, 1),
                     getRenseignUrbaInfos(codeCommune),
-                    getReverseGeocoding(featureGeometry)
+                    getReverseGeocoding(featureGeometry, mapProjection)
                 ).switchMap(
                     ([commune, parcelle, renseignUrba, propPrio, proprioSurf, dates, reverseGeocoding]) => {
                         // Nouvelle requête HTTP avec les données de `renseignementUrba`
@@ -445,7 +446,7 @@ export const getFeatureInfoEpic = (action$, {getState}) =>
                     getAdsSecteurInstruction(parcelleId),
                     getAdsAutorisation(parcelleId),
                     getQuartier(parcelleId),
-                    getReverseGeocoding(featureGeometry)
+                    getReverseGeocoding(featureGeometry, mapProjection)
                 ).switchMap(([adsSecteurInstruction, adsAutorisation, quartier, reverseGeocoding]) => {
                     return Rx.Observable.of(
                         setAttributes({
