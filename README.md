@@ -78,14 +78,19 @@ methodsWhitelist = GET
 reqtypeWhitelist.generic = (.*exist.*)|(.*pdf.*)|(.*map.*)|(.*wms.*)|(.*wmts.*)|(.*wfs.*)|(.*ows.*)|(.*geocodage.*)
 ```
 
-### Gateway
+### Gateway or Security proxy
+
+If you are using the extension via GeOrchestra, you may need to perform some specific configurations.
+These configurations depend on your installation and whether you are using GeOrchestra Gateway or Security Proxy.
 
 The request sent using "reverseGeocodingUrl" may contain a GeoJSON polygon.
 This polygon may be complex and contain a large number of points.
 
 In this case, the length of the request (HTTP GET) may be too long for the GeOrchestra Security Gateway: you will receive an HTTP 414 error code.
 
-It may then be necessary to increase the maximum line length allowed by the GeOrchestra gateway.
+#### Gateway
+
+If you receive HTTP 414 erorr code, it may then be necessary to increase the maximum line length allowed by the GeOrchestra gateway.
 
 Example:
 
@@ -93,6 +98,30 @@ Example:
 server:
   netty:
     maxInitialLineLength: 16384  # Default 4096, increase to 16KB
+```
+
+#### Security Proxy
+
+If you receive HTTP 414 erorr code, it may then be necessary to increase the maximum line length allowed by the Security Proxy changing the Jetty configuration.
+The file is named `jetty-context.xml`
+
+
+Example:
+
+```
+<Configure id="Server" class="org.eclipse.jetty.server.Server">
+  <Call name="addConnector">
+    <Arg>
+      <New class="org.eclipse.jetty.server.ServerConnector">
+        <Arg><Ref id="Server"/></Arg>
+        <Set name="requestHeaderSize">65536</Set> <!-- 64 KB -->
+        <Set name="requestBufferSize">65536</Set>
+        <Set name="responseHeaderSize">65536</Set>
+        <Set name="maxFormContentSize">2000000</Set> <!-- 2 MB -->
+      </New>
+    </Arg>
+  </Call>
+</Configure>
 ```
 
 #### Authentication
