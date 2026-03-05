@@ -8,9 +8,14 @@ include:
   - component: '$CI_SERVER_FQDN/boost/ci-component/security/software-supply-chain-npm@1.4.0'
     inputs:
       ssc_lock_file: "package-lock.json"
+  - component: $CI_SERVER_FQDN/boost/ci-component/security/dependency-track@2.0.0
+  - component: $CI_SERVER_FQDN/boost/ci-component/security/cdxgen-sbom@2.0.1
+    inputs:
+      exclude_paths: "MapStore2"
 
 stages:
   - sast
+  - post_sast
   - push_to_remote
   - test
 
