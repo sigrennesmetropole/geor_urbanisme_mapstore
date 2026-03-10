@@ -74,6 +74,7 @@ import {
     getFIC,
     getParcelle, getPrintTemplate,
     getQuartier,
+    getReverseGeocoding,
     getRenseignUrba,
     getRenseignUrbaInfos
 } from "../api";
@@ -98,7 +99,7 @@ import {
     showMarkerSelector
 } from "@mapstore/selectors/mapInfo";
 import {styleFeatures} from "../utils/UrbanismeUtils";
-import {resolutionsSelector} from "@mapstore/selectors/map";
+import {resolutionsSelector, projectionSelector} from "@mapstore/selectors/map";
 import {
     registerHook,
     RESOLUTION_HOOK
@@ -391,6 +392,8 @@ export const getFeatureInfoEpic = (action$, {getState}) =>
             const state = getState();
             const {idParcelleKey} = configSelector(state) ?? {};
             const parcelleId = layerMetadata.features?.[0]?.properties?.[idParcelleKey ?? "id_parc"] || "";
+            const featureGeometry = layerMetadata.features?.[0]?.geometry || null;
+            const mapProjection = projectionSelector(state) || "EPSG:3857";
             const activeTool = activeToolSelector(state);
             if (isEmpty(parcelleId)) {
                 return Rx.Observable.of(
@@ -410,9 +413,10 @@ export const getFeatureInfoEpic = (action$, {getState}) =>
                     getRenseignUrba(parcelleId),
                     getFIC(parcelleId, 0),
                     getFIC(parcelleId, 1),
-                    getRenseignUrbaInfos(codeCommune)
+                    getRenseignUrbaInfos(codeCommune),
+                    getReverseGeocoding(featureGeometry, mapProjection)
                 ).switchMap(
-                    ([commune, parcelle, renseignUrba, propPrio, proprioSurf, dates]) => {
+                    ([commune, parcelle, renseignUrba, propPrio, proprioSurf, dates, reverseGeocoding]) => {
                         // Nouvelle requête HTTP avec les données de `renseignementUrba`
                         const type = [...new Set(renseignUrba?.groupesLibelle?.flatMap(item => item.type))].join(', ');
 
@@ -425,6 +429,7 @@ export const getFeatureInfoEpic = (action$, {getState}) =>
                                     ...propPrio,
                                     ...proprioSurf,
                                     ...dates,
+                                    reverseGeocoding,
                                     nruPrintLayout // Ajout de l'attribut pour le layout
                                 })
                             );
@@ -440,13 +445,15 @@ export const getFeatureInfoEpic = (action$, {getState}) =>
                 observable$ = Rx.Observable.forkJoin(
                     getAdsSecteurInstruction(parcelleId),
                     getAdsAutorisation(parcelleId),
-                    getQuartier(parcelleId)
-                ).switchMap(([adsSecteurInstruction, adsAutorisation, quartier]) => {
+                    getQuartier(parcelleId),
+                    getReverseGeocoding(featureGeometry, mapProjection)
+                ).switchMap(([adsSecteurInstruction, adsAutorisation, quartier, reverseGeocoding]) => {
                     return Rx.Observable.of(
                         setAttributes({
                             ...adsSecteurInstruction,
                             ...adsAutorisation,
-                            ...quartier
+                            ...quartier,
+                            reverseGeocoding
                         })
                     );
                 }

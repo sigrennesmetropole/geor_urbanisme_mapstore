@@ -20,6 +20,7 @@
                 "plotNumber": "Número gráfico",
                 "address": "Dirección catastral",
                 "capacity": "Capacidad DGFiP (m²)",
+                "legalAddresses": "Direcciones legales",
                 "area": "Área calculada (m²)",
                 "account": "Cuenta de propietario",
                 "owner": "Propietario(s)",

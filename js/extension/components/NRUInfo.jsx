@@ -17,6 +17,14 @@ import Message from "@mapstore/components/I18N/Message";
  */
 const NRUInfo = (props) => {
     const type = [...new Set(props?.groupesLibelle?.flatMap(item => item.type))].join(', ');
+    const reverseFeatures = Array.isArray(props?.reverseGeocoding)
+        ? props.reverseGeocoding.flatMap(response => response?.features || [])
+        : (props?.reverseGeocoding?.features || []);
+    const legalAddresses = [...new Set(
+        reverseFeatures
+            .map(feature => feature?.properties?.name)
+            .filter(Boolean)
+    )];
     const tableData = [
         {
             label: <Message msgId={"urbanisme.nru.section"}/>,
@@ -29,6 +37,17 @@ const NRUInfo = (props) => {
         {
             label: <Message msgId={"urbanisme.nru.address"}/>,
             value: props.adresseCadastrale || ''
+        },
+        {
+            label: <Message msgId={"urbanisme.nru.legalAddresses"}/>,
+            value: legalAddresses.length
+                ? legalAddresses.map((address, index) => (
+                    <span key={index}>
+                        {address}
+                        {index < legalAddresses.length - 1 ? <br/> : null}
+                    </span>
+                ))
+                : ''
         },
         {
             label: <Message msgId={"urbanisme.nru.capacity"}/>,
