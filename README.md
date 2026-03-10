@@ -53,6 +53,8 @@ For example the plugin allows configuration of the following properties
             "limit": 10,
             "returntruegeometry": false
         }
+    "helpUrl": "https://docs.georchestra.org/mapstore2-urbanisme/fr/latest/",
+    "urbanismeRenseignGroupe": "false"
   }
 
  ```

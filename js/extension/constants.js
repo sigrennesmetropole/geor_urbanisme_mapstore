@@ -28,4 +28,4 @@ export const ADS_DEFAULTS = {
     emptyNumNom: "Aucun quartier ne correspond à la localisation de la parcelle"
 };
 
-export const HELP_LINK_DEFAULT = 'http://docs.georchestra.org/addon_urbanisme/';
+export const HELP_LINK_DEFAULT = 'https://docs.georchestra.org/mapstore2-urbanisme/fr/latest/';
