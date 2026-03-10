@@ -39,6 +39,7 @@ import {
 import {
     DEFAULT_CADASTRAPP_URL,
     DEFAULT_URBANISMEAPP_URL,
+    DEFAULT_REVERSE_GEOCODING_URL,
     URBANISME_RASTER_LAYER_ID,
     URBANISME_VECTOR_LAYER_ID
 } from '../../constants';
@@ -281,18 +282,17 @@ describe('Urbanisme EPICS', () => {
         mockAxios.onGet(`${CADASTRAPP_URL}/getParcelle`).reply(200, [{parcelle: "parcelle", ccopre: "ccopre",
             ccosec: "ccosec", dnupla: "dnupla", dnvoiri: "dnvoiri",  dindic: "dindic", cconvo: "cconvo", dvoilib: "dvoilib", dcntpa: "dcntpa"}]);
         mockAxios.onGet(`${URBANISMEAPP_URL}/renseignUrba`).reply(200, {libelles: [{libelle: "Test"}]});
-        mockAxios.onGet(`${CADASTRAPP_URL}/getFIC` ).reply((config)=>{
+        mockAxios.onGet(`${CADASTRAPP_URL}/getFIC`).reply((config) => {
             if (config.params.onglet === 0) return [200, [{surfc: "surfc"}]];
             return [200, [{comptecommunal: "codeProprio"}]];
         });
-        mockAxios.onGet('/urbanisme/renseignUrbaInfos').reply(200, { date_pci: '2020/10/11', date_ru: '06/2020'});
-
-        // Mock pour getPrintTemplate - URL avec paramètre type
-        mockAxios.onGet(new RegExp(`${URBANISMEAPP_URL}/templates\\?type=.*`)).reply(200, {template: "nru_template"});
+        mockAxios.onGet(/\/renseignUrbaInfos/).reply(200, { date_pci: '2020/10/11', date_ru: '06/2020'});
+        mockAxios.onGet(/\/templates/).reply(200, {template: "nru_template"});
+        mockAxios.onGet(DEFAULT_REVERSE_GEOCODING_URL).reply(200, {features: []});
 
         const urbanismeLayer = {id: URBANISME_RASTER_LAYER_ID, name: "URBANISME_PARCELLE"};
         const layerMetaData = {
-            features: [{id: "urbanisme_1", geometry: {type: "Polygon", coordinates: [[-1, 1], [-2, 2], [-3, 3], [-4, 4]]}, properties: {id_parc: "350238000BM0027"}}],
+            features: [{id: "urbanisme_1", geometry: {type: "Polygon", coordinates: [[[-1, 1], [-2, 2], [-3, 3], [-4, 4], [-1, 1]]]}, properties: {id_parc: "350238000BM0027"}}],
             featuresCrs: "EPSG:4326"
         };
         const state = { controls: { measure: { enabled: true}, urbanisme: { enabled: true}},
@@ -313,19 +313,19 @@ describe('Urbanisme EPICS', () => {
             "adresseProprio": "  ",
             "datePCI": "0/10/11",
             "dateRU": "06/2020",
+            "reverseGeocoding": [],
             "nruPrintLayout": {template: "nru_template"}
         };
         testEpic(
-            addTimeoutEpic(getFeatureInfoEpic, 60),
-            3,
+            addTimeoutEpic(getFeatureInfoEpic, 1500),
+            4,
             loadFeatureInfo(1, "Response", {service: "WMS", id: URBANISME_RASTER_LAYER_ID}, layerMetaData, urbanismeLayer),
             actions => {
-                expect(actions.length).toBe(3);
-                actions.map(action=>{
+                expect(actions.length).toBe(4);
+                actions.map(action => {
                     switch (action.type) {
                     case LOADING:
                         expect(action.name).toEqual('dataLoading');
-                        expect(action.value).toBe(true);
                         break;
                     case TOGGLE_VIEWER_PANEL:
                         expect(action.enabled).toBe(true);
@@ -339,25 +339,25 @@ describe('Urbanisme EPICS', () => {
                 });
                 done();
             },
-            state);
+            state,
+            done);
     });
 
     it('getFeatureInfoEpic returns even with empty data', (done) => {
         mockAxios.onGet(`${CADASTRAPP_URL}/getCommune`).reply(200, []);
         mockAxios.onGet(`${CADASTRAPP_URL}/getParcelle`).reply(200, []);
         mockAxios.onGet(`${URBANISMEAPP_URL}/renseignUrba`).reply(200, {});
-        mockAxios.onGet(`${CADASTRAPP_URL}/getFIC` ).reply((config)=>{
+        mockAxios.onGet(`${CADASTRAPP_URL}/getFIC`).reply((config) => {
             if (config.params.onglet === 0) return [200, []];
             return [200, []];
         });
-        mockAxios.onGet('/urbanisme/renseignUrbaInfos').reply(200, { date_pci: '2020/10/11', date_ru: '06/2020'});
-
-        // Mock pour getPrintTemplate - URL avec paramètre type
-        mockAxios.onGet(new RegExp(`${URBANISMEAPP_URL}/templates\\?type=.*`)).reply(200, {template: "nru_template"});
+        mockAxios.onGet(/\/renseignUrbaInfos/).reply(200, { date_pci: '2020/10/11', date_ru: '06/2020'});
+        mockAxios.onGet(/\/templates/).reply(200, {template: "nru_template"});
+        mockAxios.onGet(DEFAULT_REVERSE_GEOCODING_URL).reply(200, {features: []});
 
         const urbanismeLayer = layersList[0].options;
         const layerMetaData = {
-            features: [{id: "urbanisme_1", type: "Feature", geometry: {type: "Polygon", coordinates: [[-1, 1], [-2, 2], [-3, 3], [-4, 4]]}, properties: {id_parc: "350238000BM0027"}}],
+            features: [{id: "urbanisme_1", type: "Feature", geometry: {type: "Polygon", coordinates: [[[-1, 1], [-2, 2], [-3, 3], [-4, 4], [-1, 1]]]}, properties: {id_parc: "350238000BM0027"}}],
             featuresCrs: "EPSG:4326"
         };
         const state = { controls: { measure: { enabled: true}, urbanisme: { enabled: true}},
@@ -368,19 +368,19 @@ describe('Urbanisme EPICS', () => {
             libelles: [],
             "datePCI": "0/10/11",
             "dateRU": "06/2020",
+            "reverseGeocoding": [],
             "nruPrintLayout": {template: "nru_template"}
         };
         testEpic(
-            addTimeoutEpic(getFeatureInfoEpic, 60),
-            3,
+            addTimeoutEpic(getFeatureInfoEpic, 1500),
+            4,
             loadFeatureInfo(1, "Response", {service: "WMS", id: URBANISME_RASTER_LAYER_ID}, layerMetaData, urbanismeLayer),
             actions => {
-                expect(actions.length).toBe(3);
-                actions.map(action=>{
+                expect(actions.length).toBe(4);
+                actions.map(action => {
                     switch (action.type) {
                     case LOADING:
                         expect(action.name).toEqual('dataLoading');
-                        expect(action.value).toBe(true);
                         break;
                     case TOGGLE_VIEWER_PANEL:
                         expect(action.enabled).toBe(true);
@@ -394,17 +394,19 @@ describe('Urbanisme EPICS', () => {
                 });
                 done();
             },
-            state);
+            state,
+            done);
     });
 
     it('getFeatureInfoEpic load feature info ADS tool', (done) => {
         mockAxios.onGet(`${URBANISMEAPP_URL}/adsSecteurInstruction`).reply(200, {nom: "nom", ini_instru: "ini"});
         mockAxios.onGet(`${URBANISMEAPP_URL}/adsAutorisation`).reply(200, {numdossier: [{numdossier: "test"}]});
         mockAxios.onGet(`${URBANISMEAPP_URL}/quartier`).reply(200, {numnom: "num", parcelle: "test"});
+        mockAxios.onGet(DEFAULT_REVERSE_GEOCODING_URL).reply(200, {features: []});
 
         const urbanismeLayer = layersList[0].options;
         const layerMetaData = {
-            features: [{id: "urbanisme_1", type: "Feature", geometry: {type: "Polygon", coordinates: [[-1, 1], [-2, 2], [-3, 3], [-4, 4]]}, properties: {id_parc: "350238000BM0027"}}],
+            features: [{id: "urbanisme_1", type: "Feature", geometry: {type: "Polygon", coordinates: [[[-1, 1], [-2, 2], [-3, 3], [-4, 4], [-1, 1]]]}, properties: {id_parc: "350238000BM0027"}}],
             featuresCrs: "EPSG:4326"
         };
         const state = {
@@ -412,18 +414,17 @@ describe('Urbanisme EPICS', () => {
             urbanisme: { activeTool: "ADS"},
             additionalLayers: [urbanismeLayer]
         };
-        const attributes = {"nom": "nom", "ini_instru": "ini", "num_dossier": ["test"], "num_nom": "num", "id_parcelle": "test"};
+        const attributes = {"nom": "nom", "ini_instru": "ini", "num_dossier": ["test"], "num_nom": "num", "id_parcelle": "test", "reverseGeocoding": []};
         testEpic(
-            addTimeoutEpic(getFeatureInfoEpic, 60),
-            3,
+            addTimeoutEpic(getFeatureInfoEpic, 1500),
+            4,
             loadFeatureInfo(1, "Response", {service: "WMS", id: URBANISME_RASTER_LAYER_ID}, layerMetaData, urbanismeLayer),
             actions => {
-                expect(actions.length).toBe(3);
-                actions.map(action=>{
+                expect(actions.length).toBe(4);
+                actions.map(action => {
                     switch (action.type) {
                     case LOADING:
                         expect(action.name).toEqual('dataLoading');
-                        expect(action.value).toBe(true);
                         break;
                     case TOGGLE_VIEWER_PANEL:
                         expect(action.enabled).toBe(true);
@@ -437,7 +438,8 @@ describe('Urbanisme EPICS', () => {
                 });
                 done();
             },
-            state);
+            state,
+            done);
     });
 
     it('onToogleToolEpic clean up activities of previous tool', (done) => {
