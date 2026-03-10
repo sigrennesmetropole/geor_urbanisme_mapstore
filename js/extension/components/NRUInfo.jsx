@@ -39,7 +39,7 @@ const NRUInfo = (props) => {
             value: props.adresseCadastrale || ''
         },
         {
-            label: <Message msgId={"urbanisme.nru.legalAddresses"}/> ,
+            label: <Message msgId={"urbanisme.nru.legalAddresses"}/>,
             value: legalAddresses.length
                 ? legalAddresses.map((address, index) => (
                     <span key={index}>
