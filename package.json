@@ -1,6 +1,6 @@
 {
     "name": "UrbanismeExtension",
-    "version": "3.1.0",
+    "version": "3.1.1",
     "description": "Urbanisme MS's plugin for geOrchestra",
     "main": "index.js",
     "eslintConfig": {
