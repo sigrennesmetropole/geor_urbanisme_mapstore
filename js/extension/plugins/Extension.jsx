@@ -13,7 +13,6 @@ import { createSelector } from 'reselect';
 
 import { toggleControl } from "@mapstore/actions/controls";
 import Message from "@mapstore/components/I18N/Message";
-import {updateObjectFieldKey} from "@mapstore/utils/MapUtils";
 
 import UrbanismeToolbar from "./urbanisme/UrbanismeToolbar";
 import urbanismeEpic from "../epics/urbanisme";
@@ -49,7 +48,10 @@ const Urbanisme = connect(
  * Update epics name to plugin specific
  */
 const updateEpicsName = () => {
-    Object.keys(urbanismeEpic).forEach(t=> updateObjectFieldKey(urbanismeEpic, t, 'urbanimse_' + t));
+    Object.keys(urbanismeEpic).forEach(t=> {
+        urbanismeEpic['urbanimse_' + t] = urbanismeEpic[t];
+        delete urbanismeEpic[t];
+    });
     return urbanismeEpic;
 };
 

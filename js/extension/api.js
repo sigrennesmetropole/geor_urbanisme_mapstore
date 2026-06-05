@@ -360,7 +360,7 @@ export const getReverseGeocoding = geometry => {
             .get(reverseGeocodingURL || DEFAULT_REVERSE_GEOCODING_URL, {
                 params: requestParams
             })
-            .then(({ data }) => data)
+            .then(({ data }) => data?.features || [])
             .catch(error => {
                 console.error("Erreur lors du reverse geocoding:", error);
                 return [];
