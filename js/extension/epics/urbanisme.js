@@ -136,7 +136,11 @@ export const setUpPluginEpic = (action$, store) =>
         return isConfigLoaded
             ? Rx.Observable.empty()
             : Rx.Observable.defer(() => getConfiguration()).switchMap(({ cadastreWMSURL }) =>
-                Rx.Observable.of(setConfiguration({ cadastreWMSURL }))
+                Rx.Observable.of(setConfiguration({
+                    cadastreWMSURL,
+                    idParcelleKey: action.initConfig?.idParcelleKey,
+                    layer: action.initConfig?.layer
+                }))
             ).let(
                 wrapStartStop(
                     loading(true, 'configLoading'),
@@ -392,7 +396,12 @@ export const getFeatureInfoEpic = (action$, { getState }) =>
         .switchMap(({ layerMetadata }) => {
             const state = getState();
             const { idParcelleKey } = configSelector(state) ?? {};
-            const parcelleId = layerMetadata.features?.[0]?.properties?.[idParcelleKey ?? "id_parc"] || "";
+            const featureProps = layerMetadata.features?.[0]?.properties ?? {};
+            // If idParcelleKey is not configured, try known field names in order
+            const FALLBACK_KEYS = ["id_parc", "geo_parcelle", "parcel_id", "idpar"];
+            const resolvedKey = idParcelleKey ?? FALLBACK_KEYS.find(k => featureProps[k] !== undefined);
+            const rawId = featureProps[resolvedKey];
+            const parcelleId = rawId || "";
             const featureGeometry = layerMetadata.features?.[0]?.geometry || null;
             const mapProjection = projectionSelector(state) || "EPSG:3857";
             const activeTool = activeToolSelector(state);
@@ -443,7 +452,12 @@ export const getFeatureInfoEpic = (action$, { getState }) =>
                                 );
                             });
                         }
-                        return Rx.Observable.of(setAttributes(baseAttributes));
+                        return Rx.Observable.from(getPrintTemplate([])).switchMap((nruPrintLayout) => {
+                            return Rx.Observable.of(setAttributes({ ...baseAttributes, nruPrintLayout }));
+                        }).catch((err) => {
+                            console.error("Error while adding extra data: ", err);
+                            return Rx.Observable.of(setAttributes(baseAttributes));
+                        });
                     }
                 );
             } else if (activeTool === URBANISME_TOOLS.ADS) {
@@ -499,7 +513,10 @@ export const highlightFeatureEpic = (action$, { getState }) =>
         .switchMap(({ layerMetadata }) => {
             const { idParcelleKey } = configSelector(getState()) ?? {};
             const clickedPoint = clickPointSelector(getState());
-            const parcelleId = layerMetadata.features?.[0]?.properties?.[idParcelleKey ?? "id_parc"] || "";
+            const hProps = layerMetadata.features?.[0]?.properties ?? {};
+            const FALLBACK_KEYS = ["id_parc", "geo_parcelle", "parcel_id", "idpar"];
+            const resolvedKey = idParcelleKey ?? FALLBACK_KEYS.find(k => hProps[k] !== undefined);
+            const parcelleId = hProps[resolvedKey] || "";
             if (isEmpty(parcelleId)) {
                 return Rx.Observable.of(
                     resetFeatureHighlight()
