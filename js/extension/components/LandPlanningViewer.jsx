@@ -132,7 +132,8 @@ const LandPlanningViewer = ({
                 paramAttributes = {
                     ...paramAttributes,
                     libelles: (attributes.libelles || []).join("\n\n") || [],
-                    adressesPostales: mergedAddresses
+                    adressesPostales: mergedAddresses,
+                    typeDocument: ""
                 };
             }
         } else if (activeTool === ADS) {
