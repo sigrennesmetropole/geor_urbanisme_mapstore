@@ -82,33 +82,30 @@ export const printSubmit = attributes => {
         const state = getState() || {};
         const {outputFilename, layout = "A4 portrait", ...dataAttributes} =
         attributes || {};
-        const {
-            layers,
-            scaleForZoom,
-            projectedCenter,
-            dpi,
-            projection
-        } = getUrbanismePrintSpec(state);
-        const params = {
-            layout,
-            outputFilename,
-            attributes: {
-                map: {
-                    scale: scaleForZoom,
-                    center: [projectedCenter.x, projectedCenter.y],
-                    dpi,
-                    layers,
-                    projection
-                },
-                ...dataAttributes
-            }
-        };
         dispatch(loading(true, "printing"));
-        return printPDF(params)
+        return getUrbanismePrintSpec(state)
+            .then(({ layers, scaleForZoom, projectedCenter, dpi, projection }) => {
+                const params = {
+                    layout,
+                    outputFilename,
+                    attributes: {
+                        map: {
+                            scale: scaleForZoom,
+                            center: [projectedCenter.x, projectedCenter.y],
+                            dpi,
+                            layers,
+                            projection
+                        },
+                        ...dataAttributes
+                    }
+                };
+                return printPDF(params);
+            })
             .then(response => retryDownload(response, outputFilename))
             .then(() => dispatch(loading(false, "printing")))
             .catch(e => {
-                dispatch(printError("Error on reading print result: " + e.data));
+                const errDetail = e?.response?.data ? JSON.stringify(e.response.data) : (e?.message || String(e));
+                dispatch(printError("Error on reading print result: " + errDetail));
                 dispatch(loading(false, "printing"));
             });
     };
