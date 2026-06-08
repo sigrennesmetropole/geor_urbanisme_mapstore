@@ -351,10 +351,32 @@ export const getReverseGeocoding = geometry => {
             limit: 10,
             returntruegeometry: false
         };
+
+        // If the geometry JSON is too large the proxy rejects the request with
+        // ERR_NETWORK (URL length limit). Fall back to the bounding box polygon
+        // so we still get addresses without blowing up the URL.
+        const MAX_SEARCHGEOM_LENGTH = 3000;
+        let finalGeom = normalizedGeom;
+        const geomJson = JSON.stringify(normalizedGeom);
+        if (geomJson.length > MAX_SEARCHGEOM_LENGTH && normalizedGeom?.type === "Polygon") {
+            const bboxResult = bbox(turfPolygon(normalizedGeom.coordinates));
+            const [minX, minY, maxX, maxY] = bboxResult;
+            finalGeom = {
+                type: "Polygon",
+                coordinates: [[
+                    [minX, minY],
+                    [maxX, minY],
+                    [maxX, maxY],
+                    [minX, maxY],
+                    [minX, minY]
+                ]]
+            };
+        }
+
         const requestParams = {
             ...defaultParams,
             ...(reverseGeocodingParams || {}),
-            searchgeom: JSON.stringify(normalizedGeom)
+            searchgeom: JSON.stringify(finalGeom)
         };
         return axios
             .get(reverseGeocodingURL || DEFAULT_REVERSE_GEOCODING_URL, {
