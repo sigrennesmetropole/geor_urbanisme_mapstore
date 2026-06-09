@@ -235,22 +235,12 @@ describe('Urbanisme EPICS', () => {
         };
         testEpic(
             tearDownUrbanismeOnDrawToolActive,
-            2,
+            1,
             registerEventListener('click', 'measure'),
             actions => {
-                expect(actions.length).toBe(2);
-                actions.map(action=>{
-                    switch (action.type) {
-                    case TOGGLE_TOOL:
-                        expect(action.activeTool).toBe(null);
-                        break;
-                    case TOGGLE_VIEWER_PANEL:
-                        expect(action.enabled).toBe(false);
-                        break;
-                    default:
-                        expect(true).toBe(false);
-                    }
-                });
+                expect(actions.length).toBe(1);
+                expect(actions[0].type).toBe(TOGGLE_CONTROL);
+                expect(actions[0].control).toBe('urbanisme');
                 done();
             },
             state);

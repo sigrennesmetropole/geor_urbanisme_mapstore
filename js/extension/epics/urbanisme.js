@@ -11,7 +11,9 @@ import { get, isEmpty, omit } from "lodash";
 import uuid from 'uuid';
 
 import {
-    TOGGLE_CONTROL
+    TOGGLE_CONTROL,
+    toggleControl,
+    setControlProperty
 } from "@mapstore/actions/controls";
 import { error } from "@mapstore/actions/notifications";
 import { CLICK_ON_MAP, registerEventListener, unRegisterEventListener } from "@mapstore/actions/map";
@@ -175,6 +177,7 @@ export const toggleLandPlanningEpic = (action$, store) =>
             const mapInfoEnabled = get(state, "mapInfo.enabled");
             const mapHoverTrigger = mapTriggerSelector(state);
             if (enabled) {
+                const measureEnabled = get(state, "controls.measure.enabled");
                 return Rx.Observable.from([
                     updateAdditionalLayer(
                         URBANISME_RASTER_LAYER_ID,
@@ -201,7 +204,8 @@ export const toggleLandPlanningEpic = (action$, store) =>
                         })
                 ]).concat([
                     ...(mapInfoEnabled ? [toggleMapInfoState()] : []),
-                    ...(mapHoverTrigger === 'hover' ? [setMapTrigger("click")] : [])
+                    ...(mapHoverTrigger === 'hover' ? [setMapTrigger("click")] : []),
+                    ...(measureEnabled ? [setControlProperty('measure', 'enabled', false)] : [])
                 ]);
             }
             const layer = urbanismeLayerSelector(state);
@@ -283,12 +287,9 @@ export const cleanUpUrbanismeEpic = (action$, { getState }) =>
  */
 export const tearDownUrbanismeOnDrawToolActive = (action$, store) => shutdownToolOnAnotherToolDrawing(action$, store, 'urbanisme',
     () => {
-        return Rx.Observable.from([
-            toggleGFIPanel(false),
-            toggleUrbanismeTool(null)
-        ]);
+        return Rx.Observable.of(toggleControl(CONTROL_NAME));
     },
-    (state) => activeToolSelector(state)
+    (state) => urbanimseControlSelector(state)
 );
 
 
