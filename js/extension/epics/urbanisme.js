@@ -201,12 +201,13 @@ export const toggleLandPlanningEpic = (action$, store) =>
                 ]);
             }
             const layer = urbanismeLayerSelector(state);
+            const toggleMapInfo = !mapInfoEnabled ? [toggleMapInfoState()] : [];
             return !isEmpty(layer)
                 ? Rx.Observable.from([
                     removeAdditionalLayer({ id: URBANISME_RASTER_LAYER_ID, owner: URBANISME_OWNER }),
                     removeAdditionalLayer({ id: URBANISME_VECTOR_LAYER_ID, owner: URBANISME_OWNER }),
                     purgeMapInfoResults()
-                ]).concat(!mapInfoEnabled ? [toggleMapInfoState()] : [])
+                ]).concat(toggleMapInfo)
                 : Rx.Observable.empty();
         });
 
@@ -524,7 +525,7 @@ export const getUrbanismeFeatureInfoOnFeatureInfoClick = (action$, {
                 return Rx.Observable.of(purgeMapInfoResults(), noQueryableLayers());
             }
 
-            // TODO: make it in the application getState()
+            // NOTE: these identify params are defined locally; they could be moved to the application state.
             const excludeParams = ["SLD_BODY"];
             const includeOptions = [
                 "buffer",
@@ -573,9 +574,8 @@ export const getUrbanismeFeatureInfoOnFeatureInfoClick = (action$, {
                     }
                     return Rx.Observable.empty();
                 });
-            // NOTE: multiSelection is inside the event
-            // TODO: move this flag in the application state
-            if (point && point.modifiers && point.modifiers.ctrl === true && point.multiSelection) {
+            // NOTE: multiSelection is inside the event; this flag could be moved to the application state.
+            if (point?.modifiers?.ctrl === true && point?.multiSelection) {
                 return out$;
             }
             return out$.startWith(purgeMapInfoResults());

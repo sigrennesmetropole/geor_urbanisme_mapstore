@@ -2,7 +2,7 @@
 import {mapLayoutSelector} from "@mapstore/selectors/maplayout";
 import {memoize} from "lodash";
 
-export const boundingSidebarRectSelector = (state) => state.maplayout && state.maplayout.boundingSidebarRect || {};
+export const boundingSidebarRectSelector = (state) => state.maplayout?.boundingSidebarRect || {};
 
 /**
  * Retrieve only specific attribute from map layout

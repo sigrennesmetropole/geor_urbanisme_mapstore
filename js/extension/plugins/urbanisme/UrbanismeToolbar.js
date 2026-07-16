@@ -80,7 +80,7 @@ const UrbanismeToolbar = ({
                             onClick: () => onToggleTool(activeTool === NRU ? null : NRU)
                         },
                         {
-                            text: <img src={ADSIcon} style={{
+                            text: <img src={ADSIcon} alt="ADS" style={{
                                 maxWidth: '90%',
                                 width: 40,
                                 position: "relative",
