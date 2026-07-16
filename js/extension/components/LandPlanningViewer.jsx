@@ -125,9 +125,16 @@ const LandPlanningViewer = ({
                     mapImageStream: ""
                 };
             } else {
+                const legalAddresses = getLegalAddresses(attributes?.reverseGeocoding);
+                const postalAddresses = (attributes?.adressesPostales || []).join("<br/>");
+                const legalAddressesHtml = (legalAddresses || []).join("<br/>");
+                const mergedAddresses = [postalAddresses, legalAddressesHtml]
+                    .filter(value => !!value)
+                    .join("<br/>");
                 paramAttributes = {
                     ...paramAttributes,
-                    libelles: (attributes.libelles || []).join("\n\n") || []
+                    libelles: (attributes.libelles || []).join("\n\n") || [],
+                    adressesPostales: mergedAddresses
                 };
             }
         } else if (activeTool === ADS) {
