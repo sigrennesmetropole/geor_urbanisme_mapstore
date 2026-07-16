@@ -95,7 +95,7 @@ const LandPlanningViewer = ({
                     ...paramAttributes, layout: attributes.nruPrintLayout
                 };
             }
-            if (!!attributes?.groupesLibelle) {
+            if (attributes?.groupesLibelle) {
                 const typeDoc = [...new Set(attributes?.groupesLibelle?.flatMap(item => item.type))].join(', ');
                 const legalAddresses = getLegalAddresses(attributes?.reverseGeocoding);
                 const postalAddresses = (attributes?.adressesPostales || []).join("<br/>");

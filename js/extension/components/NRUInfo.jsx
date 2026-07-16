@@ -27,22 +27,26 @@ const NRUInfo = (props) => {
     )];
     const tableData = [
         {
+            id: "section",
             label: <Message msgId={"urbanisme.nru.section"}/>,
             value: props.codeSection || ''
         },
         {
+            id: "plotNumber",
             label: <Message msgId={"urbanisme.nru.plotNumber"}/>,
             value: props.numero || ''
         },
         {
+            id: "address",
             label: <Message msgId={"urbanisme.nru.address"}/>,
             value: props.adresseCadastrale || ''
         },
         {
+            id: "legalAddresses",
             label: <Message msgId={"urbanisme.nru.legalAddresses"}/> ,
             value: legalAddresses.length
                 ? legalAddresses.map((address, index) => (
-                    <span key={index}>
+                    <span key={address}>
                         {address}
                         {index < legalAddresses.length - 1 ? <br/> : null}
                     </span>
@@ -50,30 +54,37 @@ const NRUInfo = (props) => {
                 : ''
         },
         {
+            id: "capacity",
             label: <Message msgId={"urbanisme.nru.capacity"}/>,
             value: props.contenanceDGFiP || ''
         },
         {
+            id: "area",
             label: <Message msgId={"urbanisme.nru.area"}/>,
             value: props.surfaceSIG || ''
         },
         {
+            id: "account",
             label: <Message msgId={"urbanisme.nru.account"}/>,
             value: props.codeProprio || ''
         },
         {
+            id: "owner",
             label: <Message msgId={"urbanisme.nru.owner"}/>,
             value: props.nomProprio || ''
         },
         {
+            id: "productionDate",
             label: <Message msgId={"urbanisme.nru.productionDate"}/>,
             value: props.dateRU || ''
         },
         {
+            id: "year",
             label: <Message msgId={"urbanisme.nru.year"}/>,
             value: props.datePCI || ''
         },
         {
+            id: "documents",
             label: <Message msgId={"urbanisme.nru.documents"}/>,
             value: type || ''
         }
@@ -96,8 +107,8 @@ const NRUInfo = (props) => {
                 </thead>
                 <tbody>
                     {
-                        tableData.map(({label, value}, i)=>{
-                            return (<tr key={i}>
+                        tableData.map(({label, value, id})=>{
+                            return (<tr key={id}>
                                 <td className="parcelle-table-label">{label}</td>
                                 <td className="parcelle-table-value">{value}</td>
                             </tr>);
@@ -106,7 +117,7 @@ const NRUInfo = (props) => {
                 </tbody>
             </Table>
             <div>
-                {(!!props?.groupesLibelle) ?
+                {(props?.groupesLibelle) ?
                     (props.groupesLibelle || []).map(groupe => (
                         (groupe.libelles || []).map(libelle => (
                             <p className="libelle" dangerouslySetInnerHTML={{ __html: libelle }}></p>))

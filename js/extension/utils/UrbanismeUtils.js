@@ -126,7 +126,7 @@ export const getUrbanismePrintSpec = state => {
     const baseLayers = getMapfishLayersSpecification([...layersFiltered], {...spec, projection}, state, "map");
     const vectorLayers = getMapfishLayersSpecification([...clickedPointFeatures], spec, state, "map");
     // Update layerSpec to suit Urbanisme print specification
-    let layerSpec = ([...baseLayers, ...vectorLayers] || [])
+    let layerSpec = [...baseLayers, ...vectorLayers]
         .map(
             ({ singleTile, extension, format, styles, styleProperty, ...layer }) => ({
                 ...parseLayer(layer, state),
