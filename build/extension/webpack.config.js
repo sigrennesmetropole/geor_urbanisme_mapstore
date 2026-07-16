@@ -19,7 +19,7 @@ const webpackConfig = createExtensionWebpackConfig({
 });
 
 const fileLoader = {
-    test: /\.(ttf|eot|svg)(\?v=[0-9].[0-9].[0-9])?$/,
+    test: /\.(ttf|eot|svg)(\?v=\d.\d.\d)?$/,
     use: [{
         loader: 'file-loader',
         options: {
@@ -28,7 +28,7 @@ const fileLoader = {
     }]
 };
 const urlLoader = {
-    test: /\.woff(2)?(\?v=[0-9].[0-9].[0-9])?$/,
+    test: /\.woff(2)?(\?v=\d.\d.\d)?$/,
     use: [{
         loader: 'url-loader',
         options: {
@@ -38,4 +38,3 @@ const urlLoader = {
 };
 const {module: moduleObj, ...extensionConfig} = webpackConfig;
 module.exports = { ...extensionConfig, module: {...moduleObj, rules: [...moduleObj.rules, fileLoader, urlLoader]}};
-//module.exports = webpackConfig;

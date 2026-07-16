@@ -96,7 +96,7 @@ const UrbanismePlugin = {
             selector: createSelector(
                 configSelector,
                 (config) => ({
-                    style: !!config?.cadastreWMSURL ? {} : { display: "none" } // Hide when config failed to load
+                    style: config?.cadastreWMSURL ? {} : { display: "none" } // Hide when config failed to load
                 })
             ),
             position: 1501,
@@ -112,7 +112,7 @@ const UrbanismePlugin = {
             selector: createSelector(
                 configSelector,
                 (config) => ({
-                    style: !!config?.cadastreWMSURL ? {} : { display: "none" } // Hide when config failed to load
+                    style: config?.cadastreWMSURL ? {} : { display: "none" } // Hide when config failed to load
                 })
             ),
             position: 1501,

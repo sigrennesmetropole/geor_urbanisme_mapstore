@@ -22,9 +22,9 @@ export const URBANISME_TOOLS = {
 export const URBANISME_OWNER = "URBANISME";
 
 export const ADS_DEFAULTS = {
-    parcelle: `Eléments d\'informations applicables à la parcelle cadastrale`,
-    secteur: `Secteur d\'instruction :`,
-    emptyNom: `Aucun secteur d\'instruction ne correspond à la localisation de la parcelle`,
+    parcelle: `Eléments d'informations applicables à la parcelle cadastrale`,
+    secteur: `Secteur d'instruction :`,
+    emptyNom: `Aucun secteur d'instruction ne correspond à la localisation de la parcelle`,
     emptyNumNom: "Aucun quartier ne correspond à la localisation de la parcelle"
 };
 
