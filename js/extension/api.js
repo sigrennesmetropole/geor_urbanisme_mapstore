@@ -94,7 +94,10 @@ export const getRenseignUrbaNonGroupe = parcelle => {
     return axios
         .get(`${urbanismeURL}/renseignUrba`, { params: { parcelle } })
         .then(({ data }) => {
-            return { libelles: (data?.libelles || []).map(({ libelle }) => libelle) };
+            return {
+                libelles: (data?.libelles || []).map(({ libelle }) => libelle),
+                adressesPostales: (data?.adressesPostales || [])
+            };
         });
 };
 

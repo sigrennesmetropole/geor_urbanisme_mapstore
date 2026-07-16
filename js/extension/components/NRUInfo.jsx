@@ -20,11 +20,13 @@ const NRUInfo = (props) => {
     const reverseFeatures = Array.isArray(props?.reverseGeocoding)
         ? props.reverseGeocoding.flatMap(response => response?.features || [])
         : (props?.reverseGeocoding?.features || []);
-    const legalAddresses = [...new Set(
+    const reverseAddresses = [...new Set(
         reverseFeatures
             .map(feature => feature?.properties?.name)
             .filter(Boolean)
     )];
+    const postalAddresses = props?.adressesPostales || [];
+    const legalAddresses = [...new Set([...postalAddresses, ...reverseAddresses])];
     const tableData = [
         {
             label: <Message msgId={"urbanisme.nru.section"}/>,
