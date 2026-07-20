@@ -1,0 +1,72 @@
+variables:
+  OSS_MVN_DISABLE: "true"
+  # Force a pristine working tree on every run. The runner reuses build directories, and
+  # `git clean` skips registered submodule paths, leaving a stale non-git MapStore2/ folder
+  # that makes the submodule clone fail with "destination path ... already exists and is not
+  # an empty directory". Cloning from scratch removes that leftover before submodules run.
+  GIT_STRATEGY: clone
+  # Check out the MapStore2 git submodule before every job. The build depends on it
+  # (package.json declares "mapstore2": "file:MapStore2" and the "postinstall" script
+  # runs MapStore2/utility/build/postInstall.js, which lives inside the submodule).
+  GIT_SUBMODULE_STRATEGY: recursive
+
+include:
+  - component: $CI_SERVER_FQDN/boost/ci-component/security/oss-npm@2.0.0
+    inputs:
+      oss_package_json : "package-lock.json" 
+  - component: '$CI_SERVER_FQDN/boost/ci-component/security/software-supply-chain-npm@1.4.0'
+    inputs:
+      ssc_lock_file: "package-lock.json"
+  - component: $CI_SERVER_FQDN/boost/ci-component/security/dependency-track@2.0.0
+  - component: $CI_SERVER_FQDN/boost/ci-component/security/cdxgen-sbom@2.0.1
+    inputs:
+      exclude_paths: "MapStore2"
+
+default:
+  image: maven:3.9.9-eclipse-temurin-17
+  before_script:
+    - apt update && apt install -y gettext-base build-essential
+    - envsubst '${MVN_GROUP} ${MVN_RELEASE} ${MVN_SNAPSHOTS}' < pom.xml > pom.subst && mv -f pom.subst pom.xml
+
+stages:
+  - build
+  - sast
+  - post_sast
+  - push_to_remote
+  - test
+
+# Compile and build job with maven plugin execution policies define in parent pom
+rmurbanisme:build:
+  image: trion/ng-cli-e2e:12.2.12
+  stage : build
+  tags:
+    - iaas
+  script:
+    - ls $CI_PROJECT_DIR
+    - rm -f $CI_PROJECT_DIR/dist.zip
+    - rm -rf $CI_PROJECT_DIR/node_modules
+    #- npm install -g npm
+    #- npm install -g @angular/cli@8.3.25
+    - npm --version 
+    - node --version
+    - npm ci
+    #- npm link @angular/cli
+    - npm run ext:build
+  artifacts:
+    paths:
+    - $CI_PROJECT_DIR/dist/Urbanisme.zip
+
+
+push_to_remote:
+  stage: push_to_remote
+  only:
+    - master
+  variables:
+    BRANCH_NAME: "master"
+  script:
+     - apk add --no-cache git
+     - git remote add schapi_remote $REMOTE_URL
+     - git checkout -b $BRANCH_NAME
+     - git push --force schapi_remote $BRANCH_NAME:$BRANCH_NAME
+     - git push --force --tags schapi_remote
+  when: on_success
