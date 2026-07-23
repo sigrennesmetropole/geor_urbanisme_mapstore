@@ -61,9 +61,7 @@ const LandPlanningViewer = ({
     };
 
     const getLegalAddresses = (reverseGeocoding) => {
-        const reverseFeatures = Array.isArray(reverseGeocoding)
-            ? reverseGeocoding.flatMap(response => response?.features || [])
-            : (reverseGeocoding?.features || []);
+        const reverseFeatures = Array.isArray(reverseGeocoding) ? reverseGeocoding : [];
         return [...new Set(
             reverseFeatures
                 .map(feature => feature?.properties?.name)
@@ -134,7 +132,8 @@ const LandPlanningViewer = ({
                 paramAttributes = {
                     ...paramAttributes,
                     libelles: (attributes.libelles || []).join("\n\n") || [],
-                    adressesPostales: mergedAddresses
+                    adressesPostales: mergedAddresses,
+                    typeDocument: ""
                 };
             }
         } else if (activeTool === ADS) {
