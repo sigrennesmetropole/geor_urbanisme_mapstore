@@ -26,9 +26,9 @@ const plugins = [
     ...commonsPlugins
 ];
 
-// Temporary TODO: Has to be updated in createExtensionWebpackConfig
+// NOTE: this file-loader config mirrors the one in createExtensionWebpackConfig and must be kept in sync with it.
 const fileLoader = {
-    test: /\.(ttf|eot|svg)(\?v=[0-9].[0-9].[0-9])?$/,
+    test: /\.(ttf|eot|svg)(\?v=\d.\d.\d)?$/,
     use: [{
         loader: 'file-loader',
         options: {
@@ -37,7 +37,7 @@ const fileLoader = {
     }]
 };
 const urlLoader = {
-    test: /\.woff(2)?(\?v=[0-9].[0-9].[0-9])?$/,
+    test: /\.woff(2)?(\?v=\d.\d.\d)?$/,
     use: [{
         loader: 'url-loader',
         options: {

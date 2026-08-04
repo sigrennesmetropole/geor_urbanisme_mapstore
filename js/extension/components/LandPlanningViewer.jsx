@@ -61,9 +61,7 @@ const LandPlanningViewer = ({
     };
 
     const getLegalAddresses = (reverseGeocoding) => {
-        const reverseFeatures = Array.isArray(reverseGeocoding)
-            ? reverseGeocoding.flatMap(response => response?.features || [])
-            : (reverseGeocoding?.features || []);
+        const reverseFeatures = Array.isArray(reverseGeocoding) ? reverseGeocoding : [];
         return [...new Set(
             reverseFeatures
                 .map(feature => feature?.properties?.name)
@@ -95,7 +93,7 @@ const LandPlanningViewer = ({
                     ...paramAttributes, layout: attributes.nruPrintLayout
                 };
             }
-            if (!!attributes?.groupesLibelle) {
+            if (attributes?.groupesLibelle) {
                 const typeDoc = [...new Set(attributes?.groupesLibelle?.flatMap(item => item.type))].join(', ');
                 const legalAddresses = getLegalAddresses(attributes?.reverseGeocoding);
                 const postalAddresses = (attributes?.adressesPostales || []).join("<br/>");
@@ -125,9 +123,17 @@ const LandPlanningViewer = ({
                     mapImageStream: ""
                 };
             } else {
+                const legalAddresses = getLegalAddresses(attributes?.reverseGeocoding);
+                const postalAddresses = (attributes?.adressesPostales || []).join("<br/>");
+                const legalAddressesHtml = (legalAddresses || []).join("<br/>");
+                const mergedAddresses = [postalAddresses, legalAddressesHtml]
+                    .filter(value => !!value)
+                    .join("<br/>");
                 paramAttributes = {
                     ...paramAttributes,
-                    libelles: (attributes.libelles || []).join("\n\n") || []
+                    libelles: (attributes.libelles || []).join("\n\n") || [],
+                    adressesPostales: mergedAddresses,
+                    typeDocument: ""
                 };
             }
         } else if (activeTool === ADS) {

@@ -81,7 +81,7 @@ const parseLayer = (layer, state) => {
  * @param {object} state of the application
  * @return {promise} pdf download operation
  */
-export const getUrbanismePrintSpec = state => {
+export const getUrbanismePrintSpec = async state => {
     const { print = {}, map = {}, layers } = state || {};
     const spec = print?.spec && { ...print.spec, ...(print.map || {}) };
     const dpi = spec?.resolution || 96;
@@ -123,10 +123,10 @@ export const getUrbanismePrintSpec = state => {
             "lineDash": undefined
         };
     });
-    const baseLayers = getMapfishLayersSpecification([...layersFiltered], {...spec, projection}, state, "map");
-    const vectorLayers = getMapfishLayersSpecification([...clickedPointFeatures], spec, state, "map");
+    const baseLayers = await getMapfishLayersSpecification([...layersFiltered], {...spec, projection}, state, "map");
+    const vectorLayers = await getMapfishLayersSpecification([...clickedPointFeatures], {...spec, projection}, state, "map");
     // Update layerSpec to suit Urbanisme print specification
-    let layerSpec = ([...baseLayers, ...vectorLayers] || [])
+    let layerSpec = [...baseLayers, ...vectorLayers]
         .map(
             ({ singleTile, extension, format, styles, styleProperty, ...layer }) => ({
                 ...parseLayer(layer, state),

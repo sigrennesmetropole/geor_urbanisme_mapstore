@@ -28,7 +28,7 @@ function createRequest(geometry, layer) {
         typeName: layer?.search?.name ?? layer?.name, // the layer name is not used
         ogcVersion: '1.1.0',
         spatialField: {
-            attribute: "geom", // TODO: get the geom attribute from config
+            attribute: "geom", // default geometry attribute name
             geometry,
             operation: "INTERSECTS"
         }

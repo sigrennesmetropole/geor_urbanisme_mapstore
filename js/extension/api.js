@@ -94,7 +94,10 @@ export const getRenseignUrbaNonGroupe = parcelle => {
     return axios
         .get(`${urbanismeURL}/renseignUrba`, { params: { parcelle } })
         .then(({ data }) => {
-            return { libelles: (data?.libelles || []).map(({ libelle }) => libelle) };
+            return {
+                libelles: (data?.libelles || []).map(({ libelle }) => libelle),
+                adressesPostales: (data?.adressesPostales || [])
+            };
         });
 };
 
@@ -248,6 +251,27 @@ export const getReverseGeocoding = geometry => {
     };
 
     /**
+     * Convertit le résultat d'une intersection (Polygon ou MultiPolygon) en liste de polygons
+     * @param {Object} intersection - Le résultat de l'intersection turf
+     * @returns {Array} - Liste de polygons issus de l'intersection
+     */
+    const extractPolygonsFromIntersection = (intersection) => {
+        if (!intersection) {
+            return [];
+        }
+        if (intersection.geometry.type === 'Polygon') {
+            return [{ type: "Polygon", coordinates: intersection.geometry.coordinates }];
+        }
+        if (intersection.geometry.type === 'MultiPolygon') {
+            return intersection.geometry.coordinates.map(polyCoords => ({
+                type: "Polygon",
+                coordinates: polyCoords
+            }));
+        }
+        return [];
+    };
+
+    /**
      * Découpe un polygon en sous-polygons si sa diagonale dépasse la limite
      * @param {Object} polygon - Le polygon à découper
      * @param {number} maxDiagonal - La diagonale maximale en mètres (par défaut 1000m)
@@ -300,26 +324,7 @@ export const getReverseGeocoding = geometry => {
                 // Calculer l'intersection entre le polygon d'origine et la cellule
                 const intersection = intersect(polygonOriginal, cellPolygon);
 
-                if (!intersection) {
-                    // Pas d'intersection, ignorer cette cellule
-                    continue;
-                }
-
-                // L'intersection peut être un Polygon ou un MultiPolygon
-                if (intersection.geometry.type === 'Polygon') {
-                    subPolygons.push({
-                        type: "Polygon",
-                        coordinates: intersection.geometry.coordinates
-                    });
-                } else if (intersection.geometry.type === 'MultiPolygon') {
-                    // Pour un MultiPolygon, créer un polygon séparé pour chaque partie
-                    for (const polyCoords of intersection.geometry.coordinates) {
-                        subPolygons.push({
-                            type: "Polygon",
-                            coordinates: polyCoords
-                        });
-                    }
-                }
+                subPolygons.push(...extractPolygonsFromIntersection(intersection));
             }
         }
 
@@ -346,16 +351,38 @@ export const getReverseGeocoding = geometry => {
             limit: 10,
             returntruegeometry: false
         };
+
+        // If the geometry JSON is too large the proxy rejects the request with
+        // ERR_NETWORK (URL length limit). Fall back to the bounding box polygon
+        // so we still get addresses without blowing up the URL.
+        const MAX_SEARCHGEOM_LENGTH = 3000;
+        let finalGeom = normalizedGeom;
+        const geomJson = JSON.stringify(normalizedGeom);
+        if (geomJson.length > MAX_SEARCHGEOM_LENGTH && normalizedGeom?.type === "Polygon") {
+            const bboxResult = bbox(turfPolygon(normalizedGeom.coordinates));
+            const [minX, minY, maxX, maxY] = bboxResult;
+            finalGeom = {
+                type: "Polygon",
+                coordinates: [[
+                    [minX, minY],
+                    [maxX, minY],
+                    [maxX, maxY],
+                    [minX, maxY],
+                    [minX, minY]
+                ]]
+            };
+        }
+
         const requestParams = {
             ...defaultParams,
             ...(reverseGeocodingParams || {}),
-            searchgeom: JSON.stringify(normalizedGeom)
+            searchgeom: JSON.stringify(finalGeom)
         };
         return axios
             .get(reverseGeocodingURL || DEFAULT_REVERSE_GEOCODING_URL, {
                 params: requestParams
             })
-            .then(({ data }) => data)
+            .then(({ data }) => data?.features || [])
             .catch(error => {
                 console.error("Erreur lors du reverse geocoding:", error);
                 return [];

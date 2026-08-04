@@ -235,22 +235,12 @@ describe('Urbanisme EPICS', () => {
         };
         testEpic(
             tearDownUrbanismeOnDrawToolActive,
-            2,
+            1,
             registerEventListener('click', 'measure'),
             actions => {
-                expect(actions.length).toBe(2);
-                actions.map(action=>{
-                    switch (action.type) {
-                    case TOGGLE_TOOL:
-                        expect(action.activeTool).toBe(null);
-                        break;
-                    case TOGGLE_VIEWER_PANEL:
-                        expect(action.enabled).toBe(false);
-                        break;
-                    default:
-                        expect(true).toBe(false);
-                    }
-                });
+                expect(actions.length).toBe(1);
+                expect(actions[0].type).toBe(TOGGLE_CONTROL);
+                expect(actions[0].control).toBe('urbanisme');
                 done();
             },
             state);
@@ -265,10 +255,7 @@ describe('Urbanisme EPICS', () => {
             actions => {
                 expect(actions.length).toBe(1);
                 actions.map(action=>{
-                    switch (action.type) {
-                    case URBANISME_RESET_FEATURE_HIGHLIGHT:
-                        break;
-                    default:
+                    if (action.type !== URBANISME_RESET_FEATURE_HIGHLIGHT) {
                         expect(true).toBe(false);
                     }
                 });
@@ -508,14 +495,12 @@ describe('Urbanisme EPICS', () => {
             actions => {
                 expect(actions.length).toBe(1);
                 actions.map(action=>{
-                    switch (action.type) {
-                    case UPDATE_ADDITIONAL_LAYER:
+                    if (action.type === UPDATE_ADDITIONAL_LAYER) {
                         expect(action.id).toBe(URBANISME_VECTOR_LAYER_ID);
                         expect(action.options.features.length).toBe(2);
                         expect(action.options.features[0].id).toBe('urbanisme_1');
                         expect(action.options.features[1].id).toBe('get-feature-info-point');
-                        break;
-                    default:
+                    } else {
                         expect(true).toBe(false);
                     }
                 });
@@ -536,12 +521,10 @@ describe('Urbanisme EPICS', () => {
             actions => {
                 expect(actions.length).toBe(1);
                 actions.map(action=>{
-                    switch (action.type) {
-                    case UPDATE_ADDITIONAL_LAYER:
+                    if (action.type === UPDATE_ADDITIONAL_LAYER) {
                         expect(action.id).toBe(URBANISME_VECTOR_LAYER_ID);
                         expect(action.options.features.length).toBe(0);
-                        break;
-                    default:
+                    } else {
                         expect(true).toBe(false);
                     }
                 });
@@ -589,13 +572,11 @@ describe('Urbanisme EPICS', () => {
             actions => {
                 expect(actions.length).toBe(1);
                 actions.map(action=>{
-                    switch (action.type) {
-                    case URBANISME_HIGHLIGHT_FEATURE:
+                    if (action.type === URBANISME_HIGHLIGHT_FEATURE) {
                         expect(action.point).toEqual(state.urbanisme.clickPoint);
                         expect(action.feature).toEqual([layerMetaData.features[0]]);
                         expect(action.featureCrs).toBe(layerMetaData.featuresCrs);
-                        break;
-                    default:
+                    } else {
                         expect(true).toBe(false);
                     }
                 });
