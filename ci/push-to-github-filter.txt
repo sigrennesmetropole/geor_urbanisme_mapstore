@@ -5,6 +5,7 @@
 # Le répertoire pour la synchronisation
 - /ci/**
 
+- /.git/**
 - /MapStore2/**
 
 # On prend tout le reste

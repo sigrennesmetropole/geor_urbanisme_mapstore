@@ -1,6 +1,6 @@
 #!/bin/bash
 
-GITHUB_RM_URL="github.com/sigrennesmetropole/geor_tabou2_front.git"
+GITHUB_RM_URL="github.com/sigrennesmetropole/geor_urbanisme_mapstore.git"
 
 if [ ! -z "$DEBUG" ]; then
 set -x
@@ -44,7 +44,7 @@ if [ -z "$GIT_TOKEN" ]; then
   exit 1
 fi
 
-DESTINATION_REPOSITORY=/tmp/geor_tabou2_front
+DESTINATION_REPOSITORY=/tmp/geor_urbanisme_mapstore
 [ -z "$GIT_REMOTE" ] && GIT_REMOTE="https://$GITHUB_RM_ACCOUNT:$GIT_TOKEN@$GITHUB_RM_URL"
 [ -z "$PRODUCTION_REMOTE_BRANCH" ] && PRODUCTION_REMOTE_BRANCH="master"
 TEMP_DIRECTORY=/tmp
