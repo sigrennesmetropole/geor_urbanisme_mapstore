@@ -35,7 +35,7 @@ jobs:
         path: ~/.npm
         key: npm-${{ hashFiles('package-lock.json') }}
         restore-keys: npm-
-    - run: npm install
+    - run: npm ci
     - run: npm run lint
     - run: npm test
     - run: npm run ext:build

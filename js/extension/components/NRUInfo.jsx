@@ -18,11 +18,11 @@ import Message from "@mapstore/components/I18N/Message";
 const NRUInfo = (props) => {
     const type = [...new Set(props?.groupesLibelle?.flatMap(item => item.type))].join(', ');
     const reverseFeatures = Array.isArray(props?.reverseGeocoding)
-        ? props.reverseGeocoding.flatMap(response => response?.features || [])
-        : (props?.reverseGeocoding?.features || []);
+        ? props.reverseGeocoding.flatMap(response => response?.properties || [])
+        : (props?.reverseGeocoding?.properties || []);
     const reverseAddresses = [...new Set(
         reverseFeatures
-            .map(feature => feature?.properties?.name)
+            .map(feature => feature?.name)
             .filter(Boolean)
     )];
     const postalAddresses = props?.adressesPostales || [];

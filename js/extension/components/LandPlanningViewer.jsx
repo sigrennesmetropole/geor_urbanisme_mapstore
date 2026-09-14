@@ -93,14 +93,21 @@ const LandPlanningViewer = ({
                     ...paramAttributes, layout: attributes.nruPrintLayout
                 };
             }
+
+            const legalAddresses = getLegalAddresses(attributes?.reverseGeocoding);
+            const postalAddresses = (attributes?.adressesPostales || []).join("<br/>");
+            const legalAddressesHtml = (legalAddresses || []).join("<br/>");
+            const mergedAddresses = [postalAddresses, legalAddressesHtml]
+                .filter(value => !!value)
+                .join("<br/>");
+            paramAttributes = {
+                ...paramAttributes,
+                adressesPostales: mergedAddresses
+            }
+
             if (attributes?.groupesLibelle) {
                 const typeDoc = [...new Set(attributes?.groupesLibelle?.flatMap(item => item.type))].join(', ');
-                const legalAddresses = getLegalAddresses(attributes?.reverseGeocoding);
-                const postalAddresses = (attributes?.adressesPostales || []).join("<br/>");
-                const legalAddressesHtml = (legalAddresses || []).join("<br/>");
-                const mergedAddresses = [postalAddresses, legalAddressesHtml]
-                    .filter(value => !!value)
-                    .join("<br/>");
+
                 paramAttributes = {
                     ...paramAttributes,
                     libelles_1: getLibelles(attributes?.groupesLibelle, '1'),
@@ -117,22 +124,14 @@ const LandPlanningViewer = ({
                     libelles_6: getLibelles(attributes?.groupesLibelle, '6'),
                     libelles_7: getLibelles(attributes?.groupesLibelle, '7'),
                     libelles_alertes: getLibelles(attributes?.groupesLibelle, '-999'),
-                    adressesPostales: mergedAddresses,
                     typeDocument: typeDoc || "",
                     intra: true,
                     mapImageStream: ""
                 };
             } else {
-                const legalAddresses = getLegalAddresses(attributes?.reverseGeocoding);
-                const postalAddresses = (attributes?.adressesPostales || []).join("<br/>");
-                const legalAddressesHtml = (legalAddresses || []).join("<br/>");
-                const mergedAddresses = [postalAddresses, legalAddressesHtml]
-                    .filter(value => !!value)
-                    .join("<br/>");
                 paramAttributes = {
                     ...paramAttributes,
                     libelles: (attributes.libelles || []).join("\n\n") || [],
-                    adressesPostales: mergedAddresses,
                     typeDocument: ""
                 };
             }
