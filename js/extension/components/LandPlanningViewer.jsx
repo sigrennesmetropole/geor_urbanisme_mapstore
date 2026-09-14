@@ -103,7 +103,7 @@ const LandPlanningViewer = ({
             paramAttributes = {
                 ...paramAttributes,
                 adressesPostales: mergedAddresses
-            }
+            };
 
             if (attributes?.groupesLibelle) {
                 const typeDoc = [...new Set(attributes?.groupesLibelle?.flatMap(item => item.type))].join(', ');
