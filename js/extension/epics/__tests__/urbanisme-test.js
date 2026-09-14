@@ -294,6 +294,7 @@ describe('Urbanisme EPICS', () => {
             "codeSection": "ccopreccosec",
             "adresseCadastrale": "dnvoiridindic cconvo dvoilib",
             "libelles": ["Test"],
+            "adressesPostales": [],
             "surfaceSIG": "surfc",
             "nomProprio": "",
             "codeProprio": "codeProprio",
@@ -353,6 +354,7 @@ describe('Urbanisme EPICS', () => {
         };
         const attributes = {
             libelles: [],
+            adressesPostales: [],
             "datePCI": "0/10/11",
             "dateRU": "06/2020",
             "reverseGeocoding": [],

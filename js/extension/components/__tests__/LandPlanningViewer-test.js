@@ -103,7 +103,7 @@ describe('LandPlanningViewer', () => {
         // On print call
         TestUtils.Simulate.click(printButton);
         expect(spyOnPrint).toHaveBeenCalled();
-        expect(spyOnPrint.calls[0].arguments[0]).toEqual({"parcelle": "parcelle_1", "commune": "", "codeSection": "", "numero": "", "adresseCadastrale": "", "contenanceDGFiP": "", "surfaceSIG": "", "codeProprio": "", "nomProprio": "", "adresseProprio": "", "dateRU": "", "datePCI": "", "libelles": [], "outputFilename": "NRU_parcelle_1"});
+        expect(spyOnPrint.calls[0].arguments[0]).toEqual({"parcelle": "parcelle_1", "commune": "", "codeSection": "", "numero": "", "adresseCadastrale": "", "contenanceDGFiP": "", "surfaceSIG": "", "codeProprio": "", "nomProprio": "", "adresseProprio": "", "dateRU": "", "datePCI": "", "outputFilename": "NRU_parcelle_1", "adressesPostales": "", "libelles": [], "typeDocument": ""});
     });
 
     it('test viewer print option with ADS attributes', () => {
