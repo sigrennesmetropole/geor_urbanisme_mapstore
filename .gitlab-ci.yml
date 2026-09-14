@@ -57,7 +57,15 @@ rmurbanisme:build:
     paths:
     - $CI_PROJECT_DIR/dist/Urbanisme.zip
 
-
+rmurbanisme:sonar-analysis:
+  stage: test
+  image: sonarsource/sonar-scanner-cli
+  script:
+    - >
+      sonar-scanner
+      -Dsonar.host.url=${SONAR_URL}
+      -Dsonar.login=${SONAR_TOKEN}
+      -Dsonar.projectKey=${SONAR_KEY}${CI_PROJECT_NAME}
 
 ## Livraison Github
 push-to-github:
