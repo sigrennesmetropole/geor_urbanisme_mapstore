@@ -15,11 +15,11 @@ import {
     getMapfishLayersSpecification, getOlDefaultStyle
 } from "@mapstore/utils/PrintUtils";
 import { getScales, dpi2dpu } from "@mapstore/utils/MapUtils";
-import {reproject, normalizeSRS} from "@mapstore/utils/CoordinatesUtils";
+import {reproject, reprojectGeoJson, normalizeSRS} from "@mapstore/utils/CoordinatesUtils";
 import { getLayerFromName } from "@mapstore/selectors/layers";
 import {
     clickPointSelector,
-    urbanismeLayerSelector, urbanismePlotFeaturesSelector
+    urbanismeLayerSelector, urbanismePlotFeaturesSelector, urbanismePlotFeatureCrsSelector
 } from "@js/extension/selectors/urbanisme";
 import {geoJSONToLayer} from "@mapstore/utils/LayersUtils";
 
@@ -104,9 +104,13 @@ export const getUrbanismePrintSpec = async state => {
     const projectedCenter = reproject({ x: latlng.lng, y: latlng.lat }, "EPSG:4326", projection);
 
     // Only first feature of NRU/ADS is used
+    // The vector print spec expects EPSG:4326 features, whereas highlighted ones are stored in the GFI CRS
+    const featureCrs = urbanismePlotFeatureCrsSelector(state);
+    const plotFeatures = (urbanismePlotFeaturesSelector(state) || [])
+        .map(f => featureCrs ? reprojectGeoJson(f, featureCrs, "EPSG:4326") : f);
     const clickedPointFeatures = [geoJSONToLayer({
         type: 'FeatureCollection',
-        features: urbanismePlotFeaturesSelector(state)
+        features: plotFeatures
     }, 'selectedPlot')];
 
     // If a style is not defined in the layer, or if the style property does not exist in the layer, the layer is treated as an annotation layer.
